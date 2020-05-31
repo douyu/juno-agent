@@ -21,10 +21,10 @@
             endpoints=["127.0.0.1:2379"]
     [plugin.supervisor]
         enable = true
-        dir = "test/testdata/supervisor.d"
+        dir = "/etc/supervisor/conf.d"
     [plugin.systemd]
         enable = true
-        dir = "test/testdata/systemd.d"
+        dir = "/etc/systemd/system"
     [plugin.nginx]
         enable = false
         dir = "/usr/local/openresty/nginx/conf"

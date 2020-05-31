@@ -39,10 +39,10 @@ const DefaultConfig = `
             endpoints=["127.0.0.1:2379"]
     [plugin.supervisor]
         enable = true
-        dir = "testdata/testdata/supervisor.d"
+        dir = "/etc/supervisor/conf.d"
     [plugin.systemd]
         enable = true
-        dir = "testdata/testdata/systemd.d"
+        dir = "/etc/systemd/system"
     [plugin.nginx]
         enable = false
         dir = "/usr/local/openresty/nginx/conf"
@@ -62,7 +62,7 @@ const DefaultConfig = `
     [plugin.process]
         enable = true
 [jupiter.logger.default]
-    name = "testdata"
+    name = "default"
     debug = true
 [jupiter.server]
   [jupiter.server.grpc]
