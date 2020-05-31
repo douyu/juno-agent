@@ -42,7 +42,7 @@ stopsignal=QUIT
 
 func Test_supervisorScanner(t *testing.T) {
 	config := &Config{
-		Dir: "../../../../testPmt/testdata/supervisor.d",
+		Dir: "../../../../testdata/testdata/supervisor.d",
 	}
 	scanner := config.Build()
 	t.Run("parse conf file", func(t *testing.T) {
@@ -64,7 +64,7 @@ func Test_supervisorScanner(t *testing.T) {
 	})
 
 	t.Run("parse ini file", func(t *testing.T) {
-		task, _, err := scanner.parseFile("../../../testPmt/testdata/supervisor.d/test1.conf")
+		task, _, err := scanner.parseFile("../../../testdata/testdata/supervisor.d/test1.conf")
 		assert.Nil(t, err)
 		fmt.Printf("task = %+v\n", task)
 	})

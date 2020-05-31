@@ -48,5 +48,10 @@ Juno-agent --config=Juno-agent.toml
 * [api文档](https://github.com/douyu/juno-agent/tree/master/doc/api/api.md)
 
 
+## Contact
 
+- DingTalk: 
+    ![DingTalk](doc/dingtalk.png)
+- Wechat:
+    ![Wechat](doc/wechat.png)
 

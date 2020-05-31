@@ -22,7 +22,7 @@ const (
 	GetHTTPConfigTest           = `{"http":"http://192.168.132.128:50092/openapi/testGet1","method":"get","timeout":3}`
 	GetHTTPConfigWithHeaderTest = `{"http":"http://192.168.132.128:50092","method":"get","timeout":3,"header":{"aid":["123"]}}`
 	PostHTTPConfigWithJSONTest  = `{"http":"http://192.168.132.128:50092/openapi/testPost1","method":"POST","timeout":3,"header":{"Content-Type":["application/json"]},"body":"{\"ctype\":2,\"cid\":1,\"cplatform\":0,\"offset\":0,\"limit\":5}"}`
-	PostHTTPConfigWithFormTest  = `{"http":"http://192.168.132.128:50092/openapi/testPost2","method":"POST","timeout":3,"header":{"Content-Type":["application/x-www-form-urlencoded"]},"body":"name=testPmt"}`
+	PostHTTPConfigWithFormTest  = `{"http":"http://192.168.132.128:50092/openapi/testPost2","method":"POST","timeout":3,"header":{"Content-Type":["application/x-www-form-urlencoded"]},"body":"name=testdata"}`
 )
 
 func TestGetHttpConfig(t *testing.T) {

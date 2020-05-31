@@ -19,8 +19,8 @@ import (
 )
 
 func Test_confScanner_parse(t *testing.T) {
-	/*scanner := NewScanner("../../../testPmt/testdata/nginx.d")
-	if _,err := scanner.parseFile("../../../testPmt/testdata/nginx.d/test2.conf"); err != nil {
+	/*scanner := NewScanner("../../../testdata/testdata/nginx.d")
+	if _,err := scanner.parseFile("../../../testdata/testdata/nginx.d/test2.conf"); err != nil {
 		t.Logf("e: %+v\n", err)
 	}*/
 }

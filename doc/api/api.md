@@ -37,7 +37,7 @@ Juno-Agent的设计目标主要是让开发能够通过可插拔的组件，观�
 
 ```bash
 curl -X GET \
-  testPmt
+  'http://127.0.0.1:60814/api/v1/agent/config-test.toml?name=juno-agent-test&env=dev&port=8023'
 ```
 
 ```bash
@@ -111,7 +111,7 @@ type ContentNode struct {
 
 ```bash
 curl -X GET \
-  testPmt```
+  'http://127.0.0.1:60814/api/v1/agent/config?name=juno-agent-test&env=dev&port=8023&watch=true&internal=60&target=config-test.toml'
 ```
 
 **当监听的配置文件发生变化时，会返回更新后的文档内容**

@@ -22,7 +22,7 @@ import (
 
 func Test_systemdScanner(t *testing.T) {
 	config := &Config{
-		Dir: "../../../../testPmt/testdata/systemd.d",
+		Dir: "../../../../testdata/testdata/systemd.d",
 	}
 	scanner := config.Build()
 	programs, err := scanner.ListPrograms()
