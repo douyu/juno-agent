@@ -1,0 +1,12 @@
+.idea/
+*.iml
+*.exe
+sider-go
+*.bak*
+.history/
+.vscode/
+.moo.*
+db/
+vendor/
+default
+default.etcd/
