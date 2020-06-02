@@ -184,25 +184,25 @@ type ContentNode struct {
 ### 调用示例
 #### curl
 ```shell script
-curl --location --request POST 'http://127.0.0.1:60814/api/agent/check' \
+curl --location --request POST 'http://ip:port/api/v1/agent/check' \
 --header 'Content-Type: application/json' \
 --data-raw '{
 	"check_datas":[
 		{
 			"type":"mysql",
-			"data":"{\"dsn\":\"user:pwd@tcp(127.0.0.1:3306)/mark?charset=utf8&parseTime=True&loc=Local\"}"
+			"data":"{\"dsn\":\"user:pwd@tcp(ip:port)/xxx?charset=utf8&parseTime=True&loc=Local\"}"
 		},
 		{
 			"type":"redis",
-			"data":"{\"addr\":\"127.0.0.1:6740\"}"
+			"data":"{\"addr\":\"ip:port\"}"
 		},
 		{
 			"type":"http",
-			"data":"{\"http\":\"http://10.117.22.50:60814/api/agent/config\",\"method\":\"get\",\"timeout\":3}"
+			"data":"{\"http\":\"http://ip:port/xxx\",\"method\":\"get\",\"timeout\":3}"
 		},
 		{
 			"type":"tcp",
-			"data":"{\"addr\":\"127.0.0.1:8000\",\"network\":\"tcp\"}"
+			"data":"{\"addr\":\"ip:port\",\"network\":\"tcp\"}"
 		}
 		]
 }'

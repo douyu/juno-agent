@@ -38,7 +38,7 @@ func (eng *Engine) serveHTTP() error {
 	v1Group := s.Group("/api/v1")
 	v1Group.GET("/agent/:target", eng.getAppConfig) // get app config
 	v1Group.GET("/agent/config", eng.listenConfig)  // listenConfig
-	v1Group.GET("/api/agent/check", eng.agentCheck) // 加入依赖探活检测
+	v1Group.POST("/agent/check", eng.agentCheck)    // 加入依赖探活检测
 	v1Group.POST("/conf/command_line/status", eng.confStatus)
 
 	v1Group.GET("/agent/rawKey/getConfig", eng.getRawAppConfig)       // 根据原生key获取配置信息
