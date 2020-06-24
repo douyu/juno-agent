@@ -55,7 +55,7 @@ func (r *Report) ReportAgentStatus() error {
 				Env:          r.config.Env,
 			}
 			r.Reporter.Report(req)
-			time.Sleep(time.Second * time.Duration(r.config.Internal))
+			time.Sleep(time.Duration(r.config.Internal))
 		}
 	}()
 	return nil
