@@ -61,6 +61,11 @@ func init() {
 			Usage:   "use --nginx=true, show nginx plugin true or false",
 			Default: false,
 		},
+		&flag.StringFlag{
+			Name:    "host",
+			Usage:   "use --host=127.0.0.1, http, grpc, govern server use this value",
+			Default: "",
+		},
 	)
 
 }
@@ -74,7 +79,6 @@ func main() {
 		}
 	}
 	eng := core.NewEngine()
-	eng.SetGovernor("127.0.0.1:9099")
 
 	if err := eng.Run(); err != nil {
 		log.Fatal(err)

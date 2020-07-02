@@ -17,6 +17,7 @@ package core
 import (
 	"context"
 	"fmt"
+	"github.com/douyu/juno-agent/pkg/cfg"
 	"github.com/douyu/juno-agent/pkg/nginx"
 	"sync"
 	"time"
@@ -64,6 +65,7 @@ type Engine struct {
 func NewEngine() *Engine {
 	eng := &Engine{}
 	if err := eng.Startup(
+		eng.initConfig,
 		eng.startLogRecord,
 		eng.startReportStatus, // start report agent status
 		eng.startNginxConfScanner,
@@ -79,10 +81,16 @@ func NewEngine() *Engine {
 		eng.startHealCheck,
 		eng.serveGRPC,
 		eng.serveHTTP,
+		eng.serveGovern,
 	); err != nil {
 		xlog.Panic("new engine", xlog.Any("err", err))
 	}
 	return eng
+}
+
+func (eng *Engine) initConfig() error {
+	cfg.InitCfg()
+	return nil
 }
 
 // startLogRecord start log record

@@ -7,7 +7,7 @@
         enable = true
     [plugin.confProxy]
         # 配置中心地址
-        env=["dev","live","pre"]
+        env=["dev","pre"]
         prefix = "/juno-agent"
         timeout="3s"
         enable = true
@@ -30,9 +30,9 @@
         dir = "/usr/local/openresty/nginx/conf"
     [plugin.report]
         enable = true
-        debug = false
-        addr = "http://127.0.0.1:60812/api/v1/resource/node/heartbeat"
-        internal = "60s"
+        debug = true
+        addr = "http://127.0.0.1:50000/api/v1/resource/node/heartbeat"
+        internal = "10s"
         hostName = "JUNO_HOST" # 环境变量的名称，或者命令行参数的名称
         regionCode = "REGION_CODE" # 环境变量的名称，或者命令行参数的名称
         regionName = "REGION_NAME"
@@ -46,11 +46,14 @@
 [jupiter.logger.default]
     name = "default"
     debug = true
-[jupiter.server]
-  [jupiter.server.grpc]
+    level = "debug"
+[server]
+  [server.grpc]
     host = "0.0.0.0"
-    port = 60813
-
-  [jupiter.server.http]
+    port = 50010
+  [server.http]
     host = "0.0.0.0"
-    port = 60814
+    port = 50011
+  [server.govern]
+    host = "0.0.0.0"
+    port = 50012

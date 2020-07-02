@@ -24,4 +24,5 @@ type AgentReportRequest struct {
 	ZoneCode     string `json:"zone_code"`
 	ZoneName     string `json:"zone_name"`
 	Env          string `json:"env"`
+	AgentType    int    `json:"agent_type"`
 }

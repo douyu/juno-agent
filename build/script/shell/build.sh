@@ -8,7 +8,7 @@ cd ${basePath}
 rm -rf ./bin/*
 
 export GO111MODULE=on
-export GOPROXY="https://mirrors.aliyun.com/goproxy/,direct"
+export GOPROXY="https://goproxy.cn/,direct"
 
 if [ -d "${basePath}/cmd" ];then
     for file in ${basePath}/cmd/*; do

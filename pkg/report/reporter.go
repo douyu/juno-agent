@@ -16,6 +16,7 @@ package report
 
 import (
 	"github.com/douyu/juno-agent/pkg/model"
+	"github.com/douyu/jupiter/pkg/xlog"
 	"time"
 )
 
@@ -47,14 +48,17 @@ func (r *Report) ReportAgentStatus() error {
 			req := model.AgentReportRequest{
 				Hostname:     r.config.HostName,
 				IP:           appIP,
-				AgentVersion: "0.0.0.1",
+				AgentVersion: "0.1",
+				AgentType:    1,
 				RegionCode:   r.config.RegionCode,
 				RegionName:   r.config.RegionName,
 				ZoneCode:     r.config.ZoneCode,
 				ZoneName:     r.config.ZoneName,
 				Env:          r.config.Env,
 			}
-			r.Reporter.Report(req)
+			response := r.Reporter.Report(req)
+			xlog.Debug("report info", xlog.Any("response", response))
+
 			time.Sleep(time.Duration(r.config.Internal))
 		}
 	}()

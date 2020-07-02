@@ -61,4 +61,4 @@ license: ## Add license header for all code files
 
 
 run:
-	go run cmd/agent/main.go --config=config/config-live.toml
+	go run cmd/agent/main.go --config=config/config.toml

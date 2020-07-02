@@ -15,9 +15,11 @@
 package core
 
 import (
+	"github.com/douyu/juno-agent/pkg/cfg"
 	"github.com/douyu/juno-agent/pkg/model"
 	"github.com/douyu/juno-agent/pkg/pmt"
 	"github.com/douyu/juno-agent/pkg/structs"
+	"github.com/douyu/jupiter/pkg/flag"
 	"github.com/douyu/jupiter/pkg/server/xecho"
 	"github.com/douyu/jupiter/pkg/server/xgrpc"
 	"github.com/labstack/echo/v4"
@@ -27,8 +29,14 @@ import (
 )
 
 func (eng *Engine) serveHTTP() error {
-
-	s := xecho.StdConfig("http").Build()
+	config := xecho.DefaultConfig()
+	config.Host = cfg.Cfg.Server.Http.Host
+	config.Port = cfg.Cfg.Server.Http.Port
+	flagHost := flag.String("host")
+	if flagHost != "" {
+		config.Host = flagHost
+	}
+	s := config.Build()
 
 	group := s.Group("/api")
 	group.GET("/agent/reload", eng.agentReload)           // restart confd monitoring
@@ -48,14 +56,30 @@ func (eng *Engine) serveHTTP() error {
 }
 
 func (eng *Engine) serveGRPC() error {
-	config := xgrpc.StdConfig("grpc")
+	config := xgrpc.DefaultConfig()
+	config.Host = cfg.Cfg.Server.Grpc.Host
+	config.Port = cfg.Cfg.Server.Grpc.Port
+	flagHost := flag.String("host")
+	if flagHost != "" {
+		config.Host = flagHost
+	}
 	server := config.Build()
 	pb.RegisterKVServer(server.Server, eng.regProxy)
 	pb.RegisterWatchServer(server.Server, eng.regProxy)
 	pb.RegisterLeaseServer(server.Server, eng.regProxy)
 	helloworld.RegisterGreeterServer(server.Server, eng.regProxy)
-
 	return eng.Serve(server)
+}
+
+func (eng *Engine) serveGovern() error {
+	host := cfg.Cfg.Server.Govern.Host
+	port := cfg.Cfg.Server.Govern.Port
+	flagHost := flag.String("host")
+	if flagHost != "" {
+		host = flagHost
+	}
+	eng.SetGovernor(host + ":" + strconv.Itoa(port))
+	return nil
 }
 
 // agentReload reload agent watch
