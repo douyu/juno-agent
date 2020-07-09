@@ -19,6 +19,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/douyu/juno-agent/pkg/report"
 	"github.com/douyu/juno-agent/pkg/structs"
 	"github.com/douyu/juno-agent/util"
@@ -26,14 +30,11 @@ import (
 	"github.com/douyu/jupiter/pkg/util/xgo"
 	"github.com/douyu/jupiter/pkg/util/xnet"
 	"github.com/douyu/jupiter/pkg/xlog"
-	"github.com/json-iterator/go"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
 	"go.etcd.io/etcd/clientv3"
 	"go.etcd.io/etcd/mvcc/mvccpb"
-	"strconv"
-	"strings"
-	"time"
 )
 
 var (
@@ -56,12 +57,15 @@ type configNode struct {
 }
 
 // NewETCDDataSource ...
-func NewETCDDataSource(prefix string) *DataSource {
+func NewETCDDataSource(prefix string, isWatchPrometheusTargetConfig bool) *DataSource {
 	dataSource := &DataSource{
 		etcdClient: etcdv3.RawConfig("plugin.confProxy.etcd").Build(),
 		prefix:     prefix,
 	}
 	xgo.Go(dataSource.watch)
+	if isWatchPrometheusTargetConfig {
+		xgo.Go(dataSource.watchPrometheus)
+	}
 	return dataSource
 }
 
@@ -205,6 +209,42 @@ func (d *DataSource) watch() {
 						continue
 					}
 					xlog.Info("watch update success", xlog.String("key", key), xlog.String("val", value))
+				}
+			}
+		}
+	}()
+}
+
+func (d *DataSource) watchPrometheus() {
+	// etcd的key用作配置数据读取
+	hostKey := strings.Join([]string{"/prometheus", "job"}, "/")
+	// init watch
+	watch, err := d.etcdClient.NewWatch(hostKey)
+
+	if err != nil {
+		panic("watch err: " + err.Error())
+	}
+	go func() {
+		for {
+			select {
+			case event := <-watch.C():
+				switch event.Type {
+				case mvccpb.DELETE:
+				case mvccpb.PUT:
+					key, value := string(event.Kv.Key), string(event.Kv.Value)
+					keyArr := strings.Split(key, "/")
+					if len(keyArr) != 5 {
+						fmt.Println("key", key, "value", value)
+						break
+					}
+					content := `
+- targets:
+
+    - "` + value + `"
+  labels:
+    instance: ` + keyArr[4] + `
+    job: ` + keyArr[3]
+					util.WriteFile("/etc/prometheus/conf/"+keyArr[3]+".yml", content)
 				}
 			}
 		}

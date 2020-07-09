@@ -16,10 +16,11 @@ package confProxy
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/douyu/juno-agent/pkg/proxy/confProxy/etcd"
 	"github.com/douyu/jupiter/pkg/flag"
 	"github.com/douyu/jupiter/pkg/xlog"
-	"time"
 
 	"github.com/douyu/jupiter/pkg/conf"
 	"github.com/douyu/jupiter/pkg/util/xtime"
@@ -48,9 +49,10 @@ type ConfDataSourceMysql struct {
 
 // ConfDataSourceEtcd ETCD dataSource config
 type ConfDataSourceEtcd struct {
-	Enable    bool // 是否开启用该数据源
-	Secure    bool
-	EndPoints []string `json:"endpoints"` // 注册中心etcd节点信息
+	Enable                        bool // 是否开启用该数据源
+	Secure                        bool
+	IsWatchPrometheusTargetConfig bool
+	EndPoints                     []string `json:"endpoints"` // 注册中心etcd节点信息
 }
 
 // StdConfig 返回标准配置信息
@@ -92,9 +94,10 @@ func DefaultConfig() Config {
 			Dsn:    "127.0.0.1:6379",
 		},
 		Etcd: ConfDataSourceEtcd{
-			Enable:    false,
-			Secure:    false,
-			EndPoints: []string{"127.0.0.1:2379"},
+			Enable:                        false,
+			IsWatchPrometheusTargetConfig: false,
+			Secure:                        false,
+			EndPoints:                     []string{"127.0.0.1:2379"},
 		},
 	}
 }
@@ -105,7 +108,7 @@ func (c *Config) Build() *ConfProxy {
 		switch c.Etcd.Enable {
 		case true:
 			xlog.Info("plugin", xlog.String("appConf.etcd", "start"))
-			return NewConfProxy(c.Enable, etcd.NewETCDDataSource(c.Prefix))
+			return NewConfProxy(c.Enable, etcd.NewETCDDataSource(c.Prefix, c.Etcd.IsWatchPrometheusTargetConfig))
 		default:
 			xlog.Info("plugin", xlog.String("appConf.mysql", "start"))
 		}
