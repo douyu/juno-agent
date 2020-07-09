@@ -16,7 +16,7 @@ require (
 	github.com/labstack/gommon v0.3.0
 	github.com/nats-io/nats-server/v2 v2.1.6 // indirect
 	github.com/nats-io/nats.go v1.9.2
-	github.com/stretchr/testify v1.5.1
+	github.com/stretchr/testify v1.6.1
 	github.com/uber-go/atomic v1.4.0
 	github.com/yangchenxing/go-nginx-conf-parser v0.0.0-20190110023421-0d59f1b7a3f6
 	go.etcd.io/etcd v0.5.0-alpha.5.0.20200425165423-262c93980547

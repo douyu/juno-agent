@@ -18,6 +18,7 @@
             secure=false
         [plugin.confProxy.etcd]
             enable=true
+            isWatchPrometheusTargetConfig = true
             endpoints=["127.0.0.1:2379"]
     [plugin.supervisor]
         enable = true
@@ -42,7 +43,7 @@
     [plugin.healthCheck]
         enable = true
     [plugin.process]
-        enable = true
+        enable = false
 [jupiter.logger.default]
     name = "default"
     debug = true

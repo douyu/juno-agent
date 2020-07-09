@@ -50,6 +50,7 @@ type ConfDataSourceMysql struct {
 type ConfDataSourceEtcd struct {
 	Enable    bool // 是否开启用该数据源
 	Secure    bool
+	IsWatchPrometheusTargetConfig bool
 	EndPoints []string `json:"endpoints"` // 注册中心etcd节点信息
 }
 
@@ -93,6 +94,7 @@ func DefaultConfig() Config {
 		},
 		Etcd: ConfDataSourceEtcd{
 			Enable:    false,
+			IsWatchPrometheusTargetConfig: false,
 			Secure:    false,
 			EndPoints: []string{"127.0.0.1:2379"},
 		},
@@ -105,7 +107,7 @@ func (c *Config) Build() *ConfProxy {
 		switch c.Etcd.Enable {
 		case true:
 			xlog.Info("plugin", xlog.String("appConf.etcd", "start"))
-			return NewConfProxy(c.Enable, etcd.NewETCDDataSource(c.Prefix))
+			return NewConfProxy(c.Enable, etcd.NewETCDDataSource(c.Prefix, , c.Etcd.IsWatchPrometheusTargetConfig))
 		default:
 			xlog.Info("plugin", xlog.String("appConf.mysql", "start"))
 		}
