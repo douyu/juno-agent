@@ -64,6 +64,7 @@ func NewETCDDataSource(prefix string, isWatchPrometheusTargetConfig bool) *DataS
 	}
 	xgo.Go(dataSource.watch)
 	if isWatchPrometheusTargetConfig {
+		dataSource.PrometheusConfigScanner()
 		xgo.Go(dataSource.watchPrometheus)
 	}
 	return dataSource
@@ -209,42 +210,6 @@ func (d *DataSource) watch() {
 						continue
 					}
 					xlog.Info("watch update success", xlog.String("key", key), xlog.String("val", value))
-				}
-			}
-		}
-	}()
-}
-
-func (d *DataSource) watchPrometheus() {
-	// etcd的key用作配置数据读取
-	hostKey := strings.Join([]string{"/prometheus", "job"}, "/")
-	// init watch
-	watch, err := d.etcdClient.NewWatch(hostKey)
-
-	if err != nil {
-		panic("watch err: " + err.Error())
-	}
-	go func() {
-		for {
-			select {
-			case event := <-watch.C():
-				switch event.Type {
-				case mvccpb.DELETE:
-				case mvccpb.PUT:
-					key, value := string(event.Kv.Key), string(event.Kv.Value)
-					keyArr := strings.Split(key, "/")
-					if len(keyArr) != 5 {
-						fmt.Println("key", key, "value", value)
-						break
-					}
-					content := `
-- targets:
-
-    - "` + value + `"
-  labels:
-    instance: ` + keyArr[4] + `
-    job: ` + keyArr[3]
-					util.WriteFile("/etc/prometheus/conf/"+keyArr[3]+".yml", content)
 				}
 			}
 		}
