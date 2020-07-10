@@ -63,10 +63,6 @@ func NewETCDDataSource(prefix string, etcdConfig ConfDataSourceEtcd) *DataSource
 		prefix:     prefix,
 	}
 	xgo.Go(dataSource.watch)
-	if etcdConfig.IsWatchPrometheusTargetConfig {
-		dataSource.PrometheusConfigScanner(etcdConfig.PrometheusTargetConfigPath)
-		go dataSource.watchPrometheus(etcdConfig.PrometheusTargetConfigPath)
-	}
 	return dataSource
 }
 

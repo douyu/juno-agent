@@ -86,8 +86,6 @@ func DefaultConfig() Config {
 		},
 		Etcd: etcd.ConfDataSourceEtcd{
 			Enable:                        false,
-			IsWatchPrometheusTargetConfig: false,
-			PrometheusTargetConfigPath:    "/tmp/etc/prometheus/conf",
 			Secure:                        false,
 			EndPoints:                     []string{"127.0.0.1:2379"},
 		},

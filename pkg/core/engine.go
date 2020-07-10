@@ -17,9 +17,10 @@ package core
 import (
 	"context"
 	"fmt"
-	"github.com/douyu/juno-agent/pkg/nginx"
 	"sync"
 	"time"
+
+	"github.com/douyu/juno-agent/pkg/nginx"
 
 	"github.com/douyu/juno-agent/pkg/check"
 	"github.com/douyu/juno-agent/pkg/mbus"
@@ -116,7 +117,7 @@ func (eng *Engine) startConfProxy() error {
 
 // startRegProxy start app regist proxy plugin
 func (eng *Engine) startRegProxy() error {
-	eng.regProxy = regProxy.NewRegProxy(etcdv3.RawConfig("plugin.regProxy").Build())
+	eng.regProxy = regProxy.StdConfig("regProxy").Build()
 	if err := eng.regProxy.Start(); err != nil {
 		return err
 	}

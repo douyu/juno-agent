@@ -19,19 +19,20 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/douyu/jupiter/pkg/xlog"
-	"go.etcd.io/etcd/proxy/grpcproxy"
-	"google.golang.org/grpc/examples/helloworld/helloworld"
 	"net/url"
 	"strconv"
 	"strings"
 	"sync"
 
+	"github.com/douyu/juno-agent/pkg/proxy/regProxy/etcd"
 	"github.com/douyu/juno-agent/pkg/structs"
 	"github.com/douyu/jupiter/pkg/client/etcdv3"
 	"github.com/douyu/jupiter/pkg/util/xdebug"
 	"github.com/douyu/jupiter/pkg/util/xstring"
+	"github.com/douyu/jupiter/pkg/xlog"
 	pb "go.etcd.io/etcd/etcdserver/etcdserverpb"
+	"go.etcd.io/etcd/proxy/grpcproxy"
+	"google.golang.org/grpc/examples/helloworld/helloworld"
 )
 
 // RegProxy ...
@@ -47,9 +48,9 @@ type RegProxy struct {
 }
 
 // NewRegProxy ...
-func NewRegProxy(registryClient *etcdv3.Client) *RegProxy {
+func NewRegProxy(confClient *etcd.DataSource) *RegProxy {
 	proxy := &RegProxy{
-		Client:   registryClient,
+		Client:   confClient.GetClient(),
 		nodeChan: make(chan *structs.ServiceNode, 100),
 	}
 	return proxy

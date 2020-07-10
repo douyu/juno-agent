@@ -5,6 +5,9 @@
         timeout="3s"
         secure=false
         enable = true
+        [plugin.regProxy.prometheus]
+            enable = true
+            path = "/tmp/etc/prometheus/conf222"
     [plugin.confProxy]
         # 配置中心地址
         env=["dev","live","pre"]
@@ -18,8 +21,6 @@
             secure=false
         [plugin.confProxy.etcd]
             enable=true
-            isWatchPrometheusTargetConfig = true
-            prometheusTargetConfigPath= "/etc/prometheus/conf"
             endpoints=["127.0.0.1:2379"]
     [plugin.supervisor]
         enable = true

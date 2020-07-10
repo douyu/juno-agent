@@ -18,26 +18,34 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/douyu/juno-agent/pkg/proxy/regProxy/etcd"
 	"github.com/douyu/jupiter/pkg/conf"
+	"github.com/douyu/jupiter/pkg/flag"
 	"github.com/douyu/jupiter/pkg/util/xtime"
+	"github.com/douyu/jupiter/pkg/xlog"
 )
 
 // Config regConfig
 type Config struct {
-	EndPoints []string `json:"endpoints"`
-	Timeout   time.Duration
-	Secure    bool
-	Enable    bool // Whether to open the open plug-in
+	EndPoints  []string `json:"endpoints"`
+	Timeout    time.Duration
+	Secure     bool
+	Enable     bool // Whether to open the open plug-in
+	Prometheus etcd.PluginRegProxyPrometheus
 }
 
 // StdConfig returns standard configuration information
-func StdConfig(key string) Config {
+func StdConfig(key string) *Config {
 	var config = DefaultConfig()
-	if err := conf.UnmarshalKey(key, &config, conf.TagName("toml")); err != nil {
+
+	if err := conf.UnmarshalKey(fmt.Sprintf("plugin.%s", key), &config, conf.TagName("toml")); err != nil {
 		fmt.Printf("loadRegistryConfig.err:%#v\n", err)
+		xlog.Error("confProxy", xlog.String("parse config err", err.Error()))
 		panic(err)
 	}
-	return config
+	flagConfig := flag.Bool("regProxy")
+	config.Enable = flagConfig || config.Enable
+	return &config
 }
 
 // DefaultConfig return default config
@@ -47,5 +55,17 @@ func DefaultConfig() Config {
 		Timeout:   xtime.Duration("1s"),
 		Secure:    false,
 		Enable:    false,
+		Prometheus: etcd.PluginRegProxyPrometheus{
+			Enable: false,
+			Path:   "/home/www/server/prometheus/conf",
+		},
 	}
+}
+
+// Build  new the instance
+func (c *Config) Build() *RegProxy {
+	if c.Enable {
+		return NewRegProxy(etcd.NewETCDDataSource(c.Prometheus))
+	}
+	return nil
 }
