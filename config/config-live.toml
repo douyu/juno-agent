@@ -7,7 +7,7 @@
         enable = true
         [plugin.regProxy.prometheus]
             enable = true
-            path = "/tmp/etc/prometheus/conf222"
+            path = "/home/www/server/prometheus/conf"
     [plugin.confProxy]
         # 配置中心地址
         env=["dev","live","pre"]
