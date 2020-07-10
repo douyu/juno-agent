@@ -19,11 +19,10 @@ import (
 	"time"
 
 	"github.com/douyu/juno-agent/pkg/proxy/confProxy/etcd"
-	"github.com/douyu/jupiter/pkg/flag"
-	"github.com/douyu/jupiter/pkg/xlog"
-
 	"github.com/douyu/jupiter/pkg/conf"
+	"github.com/douyu/jupiter/pkg/flag"
 	"github.com/douyu/jupiter/pkg/util/xtime"
+	"github.com/douyu/jupiter/pkg/xlog"
 )
 
 // DefaultConfDir ...
@@ -36,23 +35,15 @@ type Config struct {
 	Env     []string      `json:"env"`
 	Timeout time.Duration // etcd连接超时时间
 	Secure  bool
-	Enable  bool                // 是否开启开插件
-	Mysql   ConfDataSourceMysql `json:"mysql"`
-	Etcd    ConfDataSourceEtcd  `json:"etcd"`
+	Enable  bool                    // 是否开启开插件
+	Mysql   ConfDataSourceMysql     `json:"mysql"`
+	Etcd    etcd.ConfDataSourceEtcd `json:"etcd"`
 }
 
 // ConfDataSourceMysql mysql dataSource
 type ConfDataSourceMysql struct {
 	Enable bool   // 是否开启用该数据源
 	Dsn    string `json:"dsn"`
-}
-
-// ConfDataSourceEtcd ETCD dataSource config
-type ConfDataSourceEtcd struct {
-	Enable                        bool // 是否开启用该数据源
-	Secure                        bool
-	IsWatchPrometheusTargetConfig bool
-	EndPoints                     []string `json:"endpoints"` // 注册中心etcd节点信息
 }
 
 // StdConfig 返回标准配置信息
@@ -93,9 +84,10 @@ func DefaultConfig() Config {
 			Enable: false,
 			Dsn:    "127.0.0.1:6379",
 		},
-		Etcd: ConfDataSourceEtcd{
+		Etcd: etcd.ConfDataSourceEtcd{
 			Enable:                        false,
 			IsWatchPrometheusTargetConfig: false,
+			PrometheusTargetConfigPath:    "/tmp/etc/prometheus/conf",
 			Secure:                        false,
 			EndPoints:                     []string{"127.0.0.1:2379"},
 		},
@@ -108,7 +100,7 @@ func (c *Config) Build() *ConfProxy {
 		switch c.Etcd.Enable {
 		case true:
 			xlog.Info("plugin", xlog.String("appConf.etcd", "start"))
-			return NewConfProxy(c.Enable, etcd.NewETCDDataSource(c.Prefix, c.Etcd.IsWatchPrometheusTargetConfig))
+			return NewConfProxy(c.Enable, etcd.NewETCDDataSource(c.Prefix, c.Etcd))
 		default:
 			xlog.Info("plugin", xlog.String("appConf.mysql", "start"))
 		}

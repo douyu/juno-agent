@@ -13,7 +13,7 @@ import (
 	"go.etcd.io/etcd/mvcc/mvccpb"
 )
 
-func (d *DataSource) watchPrometheus() {
+func (d *DataSource) watchPrometheus(path string) {
 	// etcd的key用作配置数据读取
 	hostKey := strings.Join([]string{"/prometheus", "job"}, "/")
 	// init watch
@@ -51,7 +51,7 @@ func (d *DataSource) watchPrometheus() {
   labels:
     instance: ` + keyArr[4] + `
     job: ` + keyArr[3]
-					util.WriteFile("/etc/prometheus/conf/"+keyArr[3]+".yml", content)
+					util.WriteFile(path+"/"+keyArr[3]+".yml", content)
 				}
 			}
 		}
@@ -59,7 +59,7 @@ func (d *DataSource) watchPrometheus() {
 }
 
 // PrometheusConfigScanner ..
-func (d *DataSource) PrometheusConfigScanner() {
+func (d *DataSource) PrometheusConfigScanner(path string) {
 
 	// etcd的key用作配置数据读取
 	hostKey := strings.Join([]string{"/prometheus", "job"}, "/")
@@ -85,7 +85,7 @@ func (d *DataSource) PrometheusConfigScanner() {
   labels:
     instance: ` + keyArr[4] + `
     job: ` + keyArr[3]
-		util.WriteFile("/etc/prometheus/conf/"+keyArr[3]+".yml", content)
+		util.WriteFile(path+"/"+keyArr[3]+".yml", content)
 	}
 	return
 }

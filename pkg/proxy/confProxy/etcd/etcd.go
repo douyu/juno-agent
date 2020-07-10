@@ -53,19 +53,19 @@ type DataSource struct {
 // configNode etcd node chan info
 type configNode struct {
 	key string
-	ch  chan *structs.ConfNode /// peizhi
+	ch  chan *structs.ConfNode
 }
 
 // NewETCDDataSource ...
-func NewETCDDataSource(prefix string, isWatchPrometheusTargetConfig bool) *DataSource {
+func NewETCDDataSource(prefix string, etcdConfig ConfDataSourceEtcd) *DataSource {
 	dataSource := &DataSource{
 		etcdClient: etcdv3.RawConfig("plugin.confProxy.etcd").Build(),
 		prefix:     prefix,
 	}
 	xgo.Go(dataSource.watch)
-	if isWatchPrometheusTargetConfig {
-		dataSource.PrometheusConfigScanner()
-		xgo.Go(dataSource.watchPrometheus)
+	if etcdConfig.IsWatchPrometheusTargetConfig {
+		dataSource.PrometheusConfigScanner(etcdConfig.PrometheusTargetConfigPath)
+		go dataSource.watchPrometheus(etcdConfig.PrometheusTargetConfigPath)
 	}
 	return dataSource
 }

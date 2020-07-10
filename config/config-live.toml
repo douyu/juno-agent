@@ -19,6 +19,7 @@
         [plugin.confProxy.etcd]
             enable=true
             isWatchPrometheusTargetConfig = true
+            prometheusTargetConfigPath= "/etc/prometheus/conf"
             endpoints=["127.0.0.1:2379"]
     [plugin.supervisor]
         enable = true
