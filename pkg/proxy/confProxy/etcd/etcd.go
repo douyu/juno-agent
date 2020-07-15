@@ -194,7 +194,6 @@ func (d *DataSource) watch() {
 						} else {
 							xlog.Error("watch update error", xlog.String("plugin", "confgo"), xlog.String("msg", err.Error()), xlog.String("key", key))
 						}
-						fmt.Println("==err111", err.Error())
 						continue
 					} else {
 						commonKey := util.GetConfigKey(confuNode.AppName, confuNode.AppEnvi, confuNode.FileName, confuNode.Port)
@@ -226,7 +225,7 @@ func (d *DataSource) ListenAppConfig(ctx echo.Context, key string) chan *structs
 // update 更新本地文件
 func (d *DataSource) update(key, value string) (*structs.ConfNode, error) {
 	confNode := &structs.ConfNode{}
-	//key check
+	// key check
 	confuKeys, err := structs.ParserConfKey(key)
 	if err != nil {
 		return confNode, err
@@ -236,7 +235,7 @@ func (d *DataSource) update(key, value string) (*structs.ConfNode, error) {
 	}
 	xlog.Debug("file update content", xlog.String("plugin", "confgo"), xlog.Any("confuKeys", confuKeys), xlog.String("key", key), xlog.String("value", value))
 
-	//value check
+	// value check
 	confuValue, err := structs.ParserConfValue(value)
 	if err != nil {
 		return confNode, err
@@ -245,9 +244,11 @@ func (d *DataSource) update(key, value string) (*structs.ConfNode, error) {
 		return confNode, fmt.Errorf("value check: %s", err.Error())
 	}
 
-	//write file
-	if err := util.WriteFile(confuValue.Metadata.Path, confuValue.Content); err != nil {
-		return confNode, err
+	for _, path := range confuValue.Metadata.Paths {
+		// write file
+		if err := util.WriteFile(path, confuValue.Content); err != nil {
+			return confNode, err
+		}
 	}
 
 	confNode = &structs.ConfNode{
@@ -286,7 +287,7 @@ func (d *DataSource) report(key, value string) error {
 	reportKey := strings.Join([]string{d.prefix + "/callback", confuKeys.AppName, confuKeys.FileName, confuKeys.Hostname}, "/")
 	reportValue := structs.ConfReport{
 		FileName:   confuKeys.FileName,
-		MD5:        util.MD5(confuValue.Content),
+		MD5:        confuValue.Metadata.Version,
 		Hostname:   confuKeys.Hostname,
 		Env:        confuKeys.EnvName,
 		Timestamp:  time.Now().Unix(),
