@@ -47,7 +47,8 @@ func (r *Report) ReportAgentStatus() error {
 			req := model.AgentReportRequest{
 				Hostname:     r.config.HostName,
 				IP:           appIP,
-				AgentVersion: "0.0.0.1",
+				AgentType:    1,
+				AgentVersion: "0.2.1",
 				RegionCode:   r.config.RegionCode,
 				RegionName:   r.config.RegionName,
 				ZoneCode:     r.config.ZoneCode,

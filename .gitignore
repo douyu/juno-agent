@@ -10,3 +10,4 @@ db/
 vendor/
 default
 default.etcd/
+release

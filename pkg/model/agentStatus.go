@@ -19,6 +19,7 @@ type AgentReportRequest struct {
 	Hostname     string `json:"hostname"`
 	IP           string `json:"ip"`
 	AgentVersion string `json:"agent_version"`
+	AgentType    int    `json:"agent_type"`
 	RegionCode   string `json:"region_code"`
 	RegionName   string `json:"region_name"`
 	ZoneCode     string `json:"zone_code"`

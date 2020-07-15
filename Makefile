@@ -2,13 +2,11 @@
 
 SHELL:=/bin/bash
 BASE_PATH:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-BUILD_PATH:=$(BASE_PATH)/build
-TITLE:=$(shell basename $(BASE_PATH))
-VCS_INFO:=$(shell $(BUILD_PATH)/script/shell/vcs.sh)
-BUILD_TIME:=$(shell date +%Y-%m-%d--%T)
-APP_PKG:=$(shell $(BUILD_PATH)/script/shell/apppkg.sh)
-JUPITER:=$(APP_PKG)/vendor/github.com/labstack/echo/v4/application
-LDFLAGS:="-X $(JUPITER).vcsInfo=$(VCS_INFO) -X $(JUPITER).buildTime=$(BUILD_TIME) -X $(JUPITER).name=$(APP_NAME) -X $(JUPITER).id=$(APP_ID)"
+SCRIPT_PATH:=$(BASE_PATH)/script
+APP_NAME:=$(shell basename $(BASE_PATH))
+COMPILE_OUT:=$(BASE_PATH)/release
+APP_VERSION:=0.2.0
+
 
 all:print fmt buildAgent
 
@@ -16,12 +14,10 @@ print:
 	@echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>making print<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<"
 	@echo SHELL:$(SHELL)
 	@echo BASE_PATH:$(BASE_PATH)
-	@echo BUILD_PATH:$(BUILD_PATH)
-	@echo TITLE:$(TITLE)
-	@echo VCS_INFO:$(VCS_INFO)
-	@echo BUILD_TIME:$(BUILD_TIME)
-	@echo JUPITER:$(JUPITER)
+	@echo SCRIPT_PATH:$(SCRIPT_PATH)
 	@echo APP_NAME:$(APP_NAME)
+	@echo COMPILE_OUT:$(COMPILE_OUT)
+	@echo APP_VERSION:$(APP_VERSION)
 	@echo -e "\n"
 
 fmt:
@@ -50,15 +46,27 @@ test:
 	@echo testPath ${BAST_PATH}
 	go test -v .${BAST_PATH}/...
 
-buildAgent:
-	@echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>making build<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<"
-	chmod +x $(BUILD_PATH)/script/shell/*.sh
-	$(BUILD_PATH)/script/shell/build.sh $(LDFLAGS)
-	@echo -e "\n"
+
 
 license: ## Add license header for all code files
 	@find . -name \*.go -exec sh -c "if ! grep -q 'LICENSE' '{}'; then mv '{}' tmp && cp doc/LICENSEHEADER.txt '{}' && cat tmp >> '{}' && rm tmp; fi" \;
 
 
 run:
-	go run cmd/agent/main.go --config=config/config-live.toml
+	go run cmd/juno-agent/main.go --config=config/config.toml
+
+
+build_all:build_agent build_data
+
+
+build_agent:
+	@echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>making build juno agent<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<"
+	@chmod +x $(SCRIPT_PATH)/build/*.sh
+	@cd cmd/juno-agent && $(SCRIPT_PATH)/build/gobuild.sh $(APP_NAME) $(COMPILE_OUT) $(APP_VERSION)
+	@echo -e "\n"
+
+build_data:
+	@echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>making build juno agent data<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<"
+	@chmod +x $(SCRIPT_PATH)/build/*.sh
+	@$(SCRIPT_PATH)/build/build_data.sh $(APP_NAME) $(APP_VERSION) $(BASE_PATH) $(COMPILE_OUT)/$(APP_VERSION)
+	@echo -e "\n"
