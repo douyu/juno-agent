@@ -37,7 +37,7 @@ type ContentNode struct {
 	Version int64  `json:"version"` // 应用部署配置版本
 }
 
-// ConfKey 存储配置的key字段 for instance /wsd-sider/wsd.go-141-66.stress.unp/wsd-ocr-task-intercepter-go/stress/static/config-stress.toml
+// ConfKey 存储配置的key字段 for instance
 type ConfKey struct {
 	Prefix   string `json:"prefix"`
 	Hostname string `json:"hostname"`
@@ -126,7 +126,7 @@ func ParserConfValue(value string) (valueData ConfValue, err error) {
 	return
 }
 
-// ConfReport {"file_name":"config-live.toml","md5":"0f07572ba1212a75d8b5a0167c5507c2","hostname":"wsd-go.a1-41-116.live.unp","env":"live","timestamp":1560477493}
+// ConfReport {"file_name":"config-live.toml","md5":"0f07572ba1212a75d8b5a0167c5507c2","hostname":"xxx.live.unp","env":"live","timestamp":1560477493}
 type ConfReport struct {
 	FileName   string `json:"file_name"`
 	MD5        string `json:"md5"`

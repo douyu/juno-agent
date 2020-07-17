@@ -166,8 +166,6 @@ func (d *DataSource) AppConfigScanner() []*structs.ConfNode {
 	return confuNodes
 }
 
-///juno-agent/app.a246-249-249.prod.ali-bj-g/wsd-projecta-group-srv-content-go/prod/static/config-prod-bjalig.toml/35306
-///juno-agent/app.a246-249-249.prod.ali-bj-g/wsd-projecta-group-srv-content-go/ALIYUN-HB2-G_prod/static/config-prod-bjalig.toml/35306
 // watch 监听配置变动
 func (d *DataSource) watch() {
 	// etcd的key用作配置数据读取

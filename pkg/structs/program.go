@@ -25,7 +25,7 @@ type ProgramExt struct {
 	FileName     string   `json:"file_name" toml:"file_name"` // profile name
 	FilePath     string   `json:"file_path" toml:"file_path"` // profile path
 	Manager      string   `json:"manager" toml:"manager"`     // systemd|supervisor
-	ProgramName  string   `json:"program" toml:"program"`     // programName eg: wsd-live-srv-room-go
+	ProgramName  string   `json:"program" toml:"program"`     // programName eg: xxx
 	StartCommand string   `json:"start_command" toml:"start_command"`
 	Environments []string `json:"environments" toml:"environments"` // environment variable
 	User         string   `json:"user" toml:"user"`                 // user account name

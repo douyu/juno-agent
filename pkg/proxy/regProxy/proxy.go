@@ -108,7 +108,7 @@ func (proxy *RegProxy) Put(ctx context.Context, in *pb.PutRequest) (out *pb.PutR
 		bytes.HasPrefix(in.GetKey(), []byte("http:")):
 		// todo(gorexlv): v1 注册信息需要额外补全，后续添加, 暂时去掉
 		// node, err = extractRegInfoV1(in.GetKey(), in.GetValue())
-	case bytes.HasPrefix(in.GetKey(), []byte("/wsd-reg/")):
+	case bytes.HasPrefix(in.GetKey(), []byte("/reg/")):
 		node, err = extractRegInfoV2(in.GetKey(), in.GetValue())
 	case bytes.HasPrefix(in.GetKey(), []byte("/dubbo/")):
 		// todo(gorexlv): v3 dubbo注册信息需要额外补全，后续添加, 暂时去掉
@@ -153,7 +153,7 @@ func extractRegInfoV1(key, val []byte) (node *structs.ServiceNode, err error) {
 
 // extractRegInfoV2 ...
 func extractRegInfoV2(key []byte, val []byte) (node *structs.ServiceNode, err error) {
-	appName, addr := xstring.Split(strings.TrimLeft(string(key), "/wsd-reg/"), "/providers/").Head2()
+	appName, addr := xstring.Split(strings.TrimLeft(string(key), "/reg/"), "/providers/").Head2()
 	xlog.Info("extractRegInfoV2", xlog.String("appName", appName), xlog.String("addr", addr))
 	uri, err := url.Parse(addr)
 	if err != nil {

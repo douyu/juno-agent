@@ -22,7 +22,7 @@ func buildConfig() {
 	config.Addr = "http://127.0.0.1:8080/report"
 	config.Internal = 60
 	config.RegionCode = "WUHAN"
-	config.ZoneName = "DY"
+	config.ZoneName = "Test"
 }
 func TestMain(m *testing.M) {
 	instantiationReport()
