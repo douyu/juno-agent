@@ -15,15 +15,18 @@
 package core
 
 import (
+	"strconv"
+
+	"github.com/douyu/juno-agent/pkg/file"
 	"github.com/douyu/juno-agent/pkg/model"
 	"github.com/douyu/juno-agent/pkg/pmt"
 	"github.com/douyu/juno-agent/pkg/structs"
+	"github.com/douyu/juno-agent/util"
 	"github.com/douyu/jupiter/pkg/server/xecho"
 	"github.com/douyu/jupiter/pkg/server/xgrpc"
 	"github.com/labstack/echo/v4"
 	pb "go.etcd.io/etcd/etcdserver/etcdserverpb"
 	"google.golang.org/grpc/examples/helloworld/helloworld"
-	"strconv"
 )
 
 func (eng *Engine) serveHTTP() error {
@@ -34,6 +37,7 @@ func (eng *Engine) serveHTTP() error {
 	group.GET("/agent/reload", eng.agentReload)           // restart confd monitoring
 	group.GET("/agent/process/status", eng.processStatus) // real time process status
 	group.POST("/agent/process/shell", eng.pmtShell)
+	group.GET("/agent/file", eng.readFile) // 文件读取
 
 	v1Group := s.Group("/api/v1")
 	v1Group.GET("/agent/:target", eng.getAppConfig) // get app config
@@ -194,6 +198,25 @@ func (eng *Engine) pmtShell(ctx echo.Context) error {
 		return reply400(ctx, err.Error())
 	}
 	return reply200(ctx, reply)
+}
+
+func (eng *Engine) readFile(c echo.Context) error {
+	var param model.GetFileReq
+	err := c.Bind(&param)
+	if err != nil {
+		return reply400(c, err.Error())
+	}
+
+	content, err := file.ReadFile(param.FileName)
+	if err != nil {
+		return reply400(c, err.Error())
+	}
+
+	content = util.EncryptAPIResp(content)
+
+	return reply200(c, map[string]interface{}{
+		"content": content,
+	})
 }
 
 func reply200(ctx echo.Context, data interface{}) error {
