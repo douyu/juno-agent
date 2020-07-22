@@ -33,7 +33,7 @@
         dir = "/usr/local/openresty/nginx/conf"
     [plugin.report]
         enable = true
-        debug = true 
+        debug = true
         addr = "http://127.0.0.1:50000/api/v1/resource/node/heartbeat"
         internal = "60s"
         hostName = "JUNO_HOST" # 环境变量的名称，或者命令行参数的名称
@@ -56,4 +56,4 @@
 
   [jupiter.server.http]
     host = "0.0.0.0"
-    port = 60814
+    port = 50010

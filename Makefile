@@ -51,12 +51,16 @@ test:
 license: ## Add license header for all code files
 	@find . -name \*.go -exec sh -c "if ! grep -q 'LICENSE' '{}'; then mv '{}' tmp && cp doc/LICENSEHEADER.txt '{}' && cat tmp >> '{}' && rm tmp; fi" \;
 
-
+run:export REGION_CODE=wuhan_region
+run:export REGION_NAME=在Agent环境变量修改该参数
+run:export ZONE_NAME=光谷
+run:export ZONE_CODE=guanggu
+run:export ENV=dev
 run:
 	go run cmd/juno-agent/main.go --config=config/config.toml
 
 
-build_all:build_agent build_data
+build_all:build_agent build_data tar
 
 
 build_agent:
@@ -70,3 +74,5 @@ build_data:
 	@chmod +x $(SCRIPT_PATH)/build/*.sh
 	@$(SCRIPT_PATH)/build/build_data.sh $(APP_NAME) $(APP_VERSION) $(BASE_PATH) $(COMPILE_OUT)/$(APP_VERSION)
 	@echo -e "\n"
+tar:
+	@cd $(BASE_PATH)/release && tar zcvf $(APP_VERSION).tar.gz $(APP_VERSION)
