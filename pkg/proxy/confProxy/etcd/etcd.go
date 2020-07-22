@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/douyu/juno-agent/pkg/report"
@@ -48,6 +49,7 @@ type DataSource struct {
 	prefix     string
 	// 用于记录长轮训的应用信息
 	jm list.List // *job
+	mu sync.Mutex
 }
 
 // configNode etcd node chan info
@@ -216,6 +218,8 @@ func (d *DataSource) ListenAppConfig(ctx echo.Context, key string) chan *structs
 		key: key,
 		ch:  make(chan *structs.ConfNode),
 	}
+	d.mu.Lock()
+	defer d.mu.Unlock()
 	d.jm.PushBack(node)
 	return node.ch
 }
@@ -301,6 +305,8 @@ func (d *DataSource) report(key, value string) error {
 // StoreAppChanInfo 监听到etcd的变化后，更新chan的信息
 func (d *DataSource) StoreAppChanInfo(key, rawKey string, val *structs.ConfNode) {
 	var n *list.Element
+	d.mu.Lock()
+	defer d.mu.Unlock()
 	for item := d.jm.Front(); nil != item; item = n {
 		node := item.Value.(*configNode)
 		n = item.Next()
