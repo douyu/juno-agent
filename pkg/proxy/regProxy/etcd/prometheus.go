@@ -37,7 +37,7 @@ func (d *DataSource) watchPrometheus(path string) {
 						break
 					}
 					filename := keyArr[3] + "_" + value
-					os.Remove("/tmp/etc/prometheus/conf/" + filename + ".yml")
+					_ = os.Remove(path + "/" + filename + ".yml")
 				case mvccpb.PUT:
 					key, value := string(event.Kv.Key), string(event.Kv.Value)
 					keyArr := strings.Split(key, "/")
@@ -52,7 +52,7 @@ func (d *DataSource) watchPrometheus(path string) {
     - "` + value + `"
   labels:
     instance: ` + keyArr[4] + `
-    job: ` + keyArr[3]
+    job: ` + filename
 					_ = util.WriteFile(path+"/"+filename+".yml", content)
 				}
 			}
