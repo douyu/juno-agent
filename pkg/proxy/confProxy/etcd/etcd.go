@@ -44,8 +44,9 @@ var (
 
 // DataSource etcd conf datasource
 type DataSource struct {
-	etcdClient *etcdv3.Client
-	prefix     string
+	etcdClient       *etcdv3.Client
+	etcdClientReport *etcdv3.Client
+	prefix           string
 	// 用于记录长轮训的应用信息
 	jm list.List // *job
 }
@@ -59,8 +60,9 @@ type configNode struct {
 // NewETCDDataSource ...
 func NewETCDDataSource(prefix string, etcdConfig ConfDataSourceEtcd) *DataSource {
 	dataSource := &DataSource{
-		etcdClient: etcdv3.RawConfig("plugin.confProxy.etcd").Build(),
-		prefix:     prefix,
+		etcdClient:       etcdv3.RawConfig("plugin.confProxy.etcd").Build(),
+		etcdClientReport: etcdv3.RawConfig("plugin.confProxy.etcd").Build(),
+		prefix:           prefix,
 	}
 	xgo.Go(dataSource.watch)
 	return dataSource
@@ -292,8 +294,12 @@ func (d *DataSource) report(key, value string) error {
 		IP:         ip,
 		HealthPort: confuKeys.Port,
 	}
-	if _, err := d.etcdClient.Put(ctx, reportKey, reportValue.JSONString()); err != nil {
-		return err
+	if _, err := d.etcdClientReport.Put(ctx, reportKey, reportValue.JSONString()); err != nil {
+		//if err == auth.ErrInvalidAuthToken {
+		d.etcdClientReport = etcdv3.RawConfig("plugin.confProxy.etcd").Build()
+		if _, err := d.etcdClientReport.Put(ctx, reportKey, reportValue.JSONString()); err != nil {
+			return err
+		}
 	}
 	return nil
 }

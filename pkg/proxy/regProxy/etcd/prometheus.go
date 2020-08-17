@@ -36,7 +36,8 @@ func (d *DataSource) watchPrometheus(path string) {
 						fmt.Println("key", key, "value", value)
 						break
 					}
-					os.Remove("/tmp/etc/prometheus/conf/" + keyArr[3] + ".yml")
+					filename := keyArr[3] + "_" + value
+					os.Remove("/tmp/etc/prometheus/conf/" + filename + ".yml")
 				case mvccpb.PUT:
 					key, value := string(event.Kv.Key), string(event.Kv.Value)
 					keyArr := strings.Split(key, "/")
@@ -44,6 +45,7 @@ func (d *DataSource) watchPrometheus(path string) {
 						fmt.Println("key", key, "value", value)
 						break
 					}
+					filename := keyArr[3] + "_" + value
 					content := `
 - targets:
 
@@ -51,7 +53,7 @@ func (d *DataSource) watchPrometheus(path string) {
   labels:
     instance: ` + keyArr[4] + `
     job: ` + keyArr[3]
-					util.WriteFile(path+"/"+keyArr[3]+".yml", content)
+					_ = util.WriteFile(path+"/"+filename+".yml", content)
 				}
 			}
 		}
