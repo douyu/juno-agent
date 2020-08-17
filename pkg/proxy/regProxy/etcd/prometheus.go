@@ -80,14 +80,16 @@ func (d *DataSource) PrometheusConfigScanner(path string) {
 			fmt.Println("key", key, "value", value)
 			break
 		}
+		filename := keyArr[3] + "_" + value
+
 		content := `
 - targets:
 
     - "` + value + `"
   labels:
     instance: ` + keyArr[4] + `
-    job: ` + keyArr[3]
-		util.WriteFile(path+"/"+keyArr[3]+".yml", content)
+    job: ` + filename
+		_ = util.WriteFile(path+"/"+filename+".yml", content)
 	}
 	return
 }
