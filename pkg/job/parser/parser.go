@@ -1,7 +1,8 @@
-package job
+package parser
 
 import (
 	"fmt"
+	"github.com/robfig/cron/v3"
 	"math"
 	"strconv"
 	"strings"
@@ -85,7 +86,7 @@ func NewParser(options ParseOption) Parser {
 // Parse returns a new crontab schedule representing the given spec.
 // It returns a descriptive error if the spec is not valid.
 // It accepts crontab specs and features configured by NewParser.
-func (p Parser) Parse(spec string) (Schedule, error) {
+func (p Parser) Parse(spec string) (cron.Schedule, error) {
 	if len(spec) == 0 {
 		return nil, fmt.Errorf("empty spec string")
 	}
@@ -226,7 +227,7 @@ var standardParser = NewParser(
 // It accepts
 //   - Standard crontab specs, e.g. "* * * * ?"
 //   - Descriptors, e.g. "@midnight", "@every 1h30m"
-func ParseStandard(standardSpec string) (Schedule, error) {
+func ParseStandard(standardSpec string) (cron.Schedule, error) {
 	return standardParser.Parse(standardSpec)
 }
 
@@ -362,7 +363,7 @@ func all(r bounds) uint64 {
 }
 
 // parseDescriptor returns a predefined schedule for the expression, or error if none matches.
-func parseDescriptor(descriptor string, loc *time.Location) (Schedule, error) {
+func parseDescriptor(descriptor string, loc *time.Location) (cron.Schedule, error) {
 	switch descriptor {
 	case "@yearly", "@annually":
 		return &SpecSchedule{
@@ -428,6 +429,22 @@ func parseDescriptor(descriptor string, loc *time.Location) (Schedule, error) {
 			return nil, fmt.Errorf("failed to parse duration %s: %s", descriptor, err)
 		}
 		return Every(duration), nil
+	}
+
+	const at = "@at "
+	if strings.HasPrefix(descriptor, at) {
+		tss := strings.Split(descriptor[len(at):], ",")
+		atls := make([]time.Time, 0, len(tss))
+		for _, ts := range tss {
+			ts = strings.TrimSpace(ts)
+			att, err := time.ParseInLocation("2006-01-02 15:04:05", ts, time.Local)
+			if err != nil {
+				return nil, fmt.Errorf("Failed to parse time %s: %s", descriptor, err)
+			}
+			atls = append(atls, att)
+		}
+
+		return At(atls), nil
 	}
 
 	return nil, fmt.Errorf("unrecognized descriptor: %s", descriptor)

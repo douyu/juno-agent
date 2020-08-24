@@ -1,4 +1,4 @@
-package job
+package parser
 
 import "time"
 

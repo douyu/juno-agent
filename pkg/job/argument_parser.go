@@ -1,4 +1,4 @@
-package utils
+package job
 
 import (
 	"errors"
@@ -139,6 +139,6 @@ func (cap *cmdArgumentParser) detectEnd() (detected bool) {
 	return false
 }
 
-func ParseCmdArguments(s string) (arguments []string) {
+func parseCmdArguments(s string) (arguments []string) {
 	return newCmdArgumentParser(s).parse()
 }
