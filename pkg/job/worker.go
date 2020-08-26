@@ -177,12 +177,12 @@ func (w *worker) watchOnce() {
 	})
 }
 
-// 立即执行一次任务
+// watch任务执行列表，执行强杀操作
 func (w *worker) watchExcutingProc() {
 	ctx, cancelFunc := NewEtcdTimeoutContext(w)
 	defer cancelFunc()
 
-	watch, err := etcd.WatchPrefix(w.Client, ctx, ProcKeyPrefix)
+	watch, err := etcd.WatchPrefix(w.Client, ctx, ProcKeyPrefix+w.ID)
 	if err != nil {
 		panic(err)
 	}
