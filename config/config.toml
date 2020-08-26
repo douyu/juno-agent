@@ -50,7 +50,7 @@
         reqTimeout = 10
         etcdConfigKey = "myetcd"
 [jupiter.etcdv3.myetcd]
-    endpoints = ["127.0.0.1:2379"]
+    endpoints = ["mps.longsys.com:2379"]
     connectTimeout = "10s"
 [jupiter.logger.default]
     name = "default"

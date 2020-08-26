@@ -2,31 +2,43 @@ package job
 
 import (
 	"fmt"
+	"github.com/douyu/juno-agent/pkg/job/parser"
 	"github.com/douyu/juno-agent/pkg/report"
+	"github.com/robfig/cron/v3"
 
 	"github.com/douyu/jupiter/pkg/conf"
 	"github.com/douyu/jupiter/pkg/xlog"
 )
 
+var (
+	myParser = parser.NewParser(parser.Second | parser.Minute | parser.Hour | parser.Dom | parser.Month | parser.Dow | parser.Descriptor)
+)
+
+const (
+	JobsKeyPrefix  = "/cronsun/cmd/"   // cronsun task路径
+	OnceKeyPrefix  = "/cronsun/once/"  // 马上执行任务路径
+	LockKeyPrefix  = "/cronsun/lock/"  // job lock 路径
+	GroupKeyPrefix = "/cronsun/group/" // 节点分组
+	ProcKeyPrefix  = "/cronsun/proc/"  // 正在运行的Process
+)
+
 type Config struct {
-	Jobs          string // cmd 路径
-	Once          string // 马上执行任务路径
-	Lock          string // job lock 路径
-	Group         string // 节点分组
-	EtcdConfigKey string // jupiter.etcdv3.xxxxxx
-	ReqTimeout    int    // 请求超时时间，单位秒
+	EtcdConfigKey   string // jupiter.etcdv3.xxxxxx
+	ReqTimeout      int    // 请求操作ETCD的超时时间，单位秒
+	RequireLockTime int64  // 抢锁等待时间，单位秒
 
 	HostName string
 	AppIP    string
+
+	logger   *xlog.Logger
+	parser   parser.Parser
+	wrappers []cron.JobWrapper
 }
 
 // DefaultConfig ...
 func DefaultConfig() *Config {
 	return &Config{
-		Jobs:  "/worker/jobs/",
-		Once:  "/worker/once/",
-		Lock:  "/worker/lock/",
-		Group: "/worker/group/",
+		ReqTimeout: 5,
 	}
 }
 
@@ -46,7 +58,15 @@ func (c *Config) Build() *worker {
 	c.HostName = report.ReturnHostName()
 	c.AppIP = report.ReturnAppIp()
 
+	if c.logger == nil {
+		c.logger = xlog.JupiterLogger
+	}
+	c.logger = c.logger.With(xlog.FieldMod("worker"))
+
+	// default
+	c.parser = myParser
+	// 默认前面有任务执行，则直接跳过不执行
+	c.wrappers = append(c.wrappers, skipIfStillRunning(c.logger))
+
 	return NewWorker(c)
 }
-
-

@@ -28,15 +28,16 @@ import (
 
 type (
 	// JobWrapper ...
-	//JobWrapper = cron.JobWrapper
+	JobWrapper = cron.JobWrapper
 	// EntryID ...
 	EntryID = cron.EntryID
 	// Schedule ...
 	Schedule = cron.Schedule
+	// Job ...
+	CronJob = cron.Job
 	//NamedJob ..
 	NamedJob interface {
 		Run() error
-		Name() string
 	}
 )
 
@@ -71,14 +72,11 @@ type Cron struct {
 }
 
 func newCron(config *worker) *Cron {
-	if config.logger == nil {
-		config.logger = xlog.JupiterLogger
-	}
-	config.logger = config.logger.With(xlog.FieldMod("worker"))
 	c := &Cron{
 		worker: config,
 		Cron: cron.New(
 			cron.WithLogger(&wrappedLogger{config.logger}),
+			cron.WithChain(config.wrappers...),
 		),
 	}
 	return c
@@ -96,7 +94,6 @@ func (c *Cron) Schedule(schedule Schedule, job NamedJob) EntryID {
 		logger:   c.worker.logger,
 	}
 
-	c.worker.logger.Info("add job", xlog.String("name", job.Name()))
 	return c.Cron.Schedule(schedule, innnerJob)
 }
 
@@ -114,11 +111,15 @@ func (c *Cron) AddFunc(spec string, cmd func() error) (EntryID, error) {
 	return c.AddJob(spec, FuncJob(cmd))
 }
 
+// Remove an entry from being run in the future.
+func (c *Cron) Remove(id EntryID) {
+	c.Cron.Remove(id)
+}
+
 // Run ...
-func (c *Cron) Run() error {
+func (c *Cron) Run() {
 	c.worker.logger.Info("run worker", xlog.Int("number of scheduled jobs", len(c.Cron.Entries())))
-	c.Cron.Run()
-	return nil
+	c.Cron.Start()
 }
 
 // Stop ...
@@ -148,12 +149,11 @@ type wrappedJob struct {
 
 // Run ...
 func (wj wrappedJob) Run() {
-
 	_ = wj.run()
 }
 
 func (wj wrappedJob) run() (err error) {
-	var fields = []xlog.Field{zap.String("name", wj.Name())}
+	var fields = []xlog.Field{}
 	var beg = time.Now()
 	defer func() {
 		if rec := recover(); rec != nil {
@@ -171,8 +171,6 @@ func (wj wrappedJob) run() (err error) {
 		if err != nil {
 			fields = append(fields, xlog.String("err", err.Error()), xlog.Duration("cost", time.Since(beg)))
 			wj.logger.Error("worker", fields...)
-		} else {
-			wj.logger.Info("worker", fields...)
 		}
 	}()
 
