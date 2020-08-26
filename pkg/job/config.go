@@ -15,11 +15,10 @@ var (
 )
 
 const (
-	JobsKeyPrefix  = "/cronsun/cmd/"   // cronsun task路径
-	OnceKeyPrefix  = "/cronsun/once/"  // 马上执行任务路径
-	LockKeyPrefix  = "/cronsun/lock/"  // job lock 路径
-	GroupKeyPrefix = "/cronsun/group/" // 节点分组
-	ProcKeyPrefix  = "/cronsun/proc/"  // 正在运行的Process
+	JobsKeyPrefix = "/worker/cmd/"  // cronsun task路径
+	OnceKeyPrefix = "/worker/once/" // 马上执行任务路径
+	LockKeyPrefix = "/worker/lock/" // job lock 路径
+	ProcKeyPrefix = "/worker/proc/" // 正在运行的Process
 )
 
 type Config struct {
