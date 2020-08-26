@@ -12,7 +12,7 @@ import (
 )
 
 // 当前执行中的任务信息
-// key: /cronsun/proc/node/jobId/pid
+// key: /{etcd_prefix}/node/jobId/pid
 // value: 开始执行时间
 // key 会自动过期，防止进程意外退出后没有清除相关 key，过期时间可配置
 type Process struct {
@@ -61,9 +61,6 @@ func (p *Process) Val() (string, error) {
 	return string(b), nil
 }
 
-// put 出错也进行 del 操作
-// 有可能某种原因，put 命令已经发送到 etcd server
-// 目前已知的 deadline 会出现此情况
 func (p *Process) put(job *Job) (err error) {
 	if atomic.LoadInt32(&p.running) != 1 {
 		return

@@ -259,6 +259,22 @@ func (w *worker) modJob(job *Job) {
 	}
 }
 
+func (w *worker) addJob(job *Job) {
+	// 添加任务到当前节点
+	job.worker = w
+	w.jobs[job.ID] = job
+
+	cmds := job.Cmds()
+	if len(cmds) == 0 {
+		return
+	}
+
+	for _, cmd := range cmds {
+		w.addCmd(cmd)
+	}
+	return
+}
+
 func (w *worker) delCmd(cmd *Cmd) {
 	c, ok := w.cmds[cmd.GetID()]
 	if ok {
@@ -286,22 +302,6 @@ func (w *worker) modCmd(cmd *Cmd) {
 	}
 
 	w.logger.Infof("job[%s] group[%s] rule[%s] timer[%s] has updated", c.Job.ID, c.Job.Group, c.JobRule.ID, c.JobRule.Timer)
-}
-
-func (w *worker) addJob(job *Job) {
-	// 添加任务到当前节点
-	job.worker = w
-	w.jobs[job.ID] = job
-
-	cmds := job.Cmds()
-	if len(cmds) == 0 {
-		return
-	}
-
-	for _, cmd := range cmds {
-		w.addCmd(cmd)
-	}
-	return
 }
 
 func (w *worker) addCmd(cmd *Cmd) {
