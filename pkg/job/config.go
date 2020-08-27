@@ -2,12 +2,12 @@ package job
 
 import (
 	"fmt"
+
 	"github.com/douyu/juno-agent/pkg/job/parser"
 	"github.com/douyu/juno-agent/pkg/report"
-	"github.com/robfig/cron/v3"
-
 	"github.com/douyu/jupiter/pkg/conf"
 	"github.com/douyu/jupiter/pkg/xlog"
+	"github.com/robfig/cron/v3"
 )
 
 var (

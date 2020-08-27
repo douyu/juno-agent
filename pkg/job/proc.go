@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"go.etcd.io/etcd/clientv3"
-	"go.etcd.io/etcd/clientv3/concurrency"
 	"strings"
 	"sync/atomic"
 	"time"
+
+	"github.com/coreos/etcd/clientv3"
+	"github.com/coreos/etcd/clientv3/concurrency"
 )
 
 // 当前执行中的任务信息
@@ -49,7 +50,7 @@ func GetProcFromKey(key string) (proc *Process, err error) {
 }
 
 func (p *Process) Key() string {
-	return ProcKeyPrefix + p.NodeID  + "/" + p.JobID + "/" + p.ID
+	return ProcKeyPrefix + p.NodeID + "/" + p.JobID + "/" + p.ID
 }
 
 func (p *Process) Val() (string, error) {
@@ -74,7 +75,6 @@ func (p *Process) put(job *Job) (err error) {
 	if err != nil {
 		return err
 	}
-
 
 	ctx, cancel := context.WithTimeout(context.Background(),
 		time.Duration(job.ReqTimeout)*time.Second)

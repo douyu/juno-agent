@@ -16,7 +16,6 @@ package job
 
 import (
 	"fmt"
-	"go.uber.org/zap"
 	"runtime"
 	"sync/atomic"
 	"time"
@@ -24,6 +23,7 @@ import (
 	"github.com/douyu/jupiter/pkg/util/xstring"
 	"github.com/douyu/jupiter/pkg/xlog"
 	"github.com/robfig/cron/v3"
+	"go.uber.org/zap"
 )
 
 type (

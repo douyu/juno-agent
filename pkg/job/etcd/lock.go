@@ -16,10 +16,10 @@ package etcd
 
 import (
 	"context"
-	"go.etcd.io/etcd/clientv3"
 	"time"
 
-	"go.etcd.io/etcd/clientv3/concurrency"
+	"github.com/coreos/etcd/clientv3"
+	"github.com/coreos/etcd/clientv3/concurrency"
 )
 
 // Mutex ...
@@ -45,13 +45,6 @@ func (mutex *Mutex) Lock(timeout time.Duration) (err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	return mutex.m.Lock(ctx)
-}
-
-// TryLock ...
-func (mutex *Mutex) TryLock(timeout time.Duration) (err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-	return mutex.m.TryLock(ctx)
 }
 
 // Unlock ...

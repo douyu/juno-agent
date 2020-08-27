@@ -2,11 +2,12 @@ package parser
 
 import (
 	"fmt"
-	"github.com/robfig/cron/v3"
 	"math"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/robfig/cron/v3"
 )
 
 // Configuration options for creating a parser. Most options specify which
