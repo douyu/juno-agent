@@ -23,6 +23,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/coreos/etcd/clientv3"
+	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/douyu/juno-agent/pkg/report"
 	"github.com/douyu/juno-agent/pkg/structs"
 	"github.com/douyu/juno-agent/util"
@@ -33,8 +35,6 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
-	"go.etcd.io/etcd/clientv3"
-	"go.etcd.io/etcd/mvcc/mvccpb"
 )
 
 var (
@@ -173,7 +173,7 @@ func (d *DataSource) watch() {
 	// etcd的key用作配置数据读取
 	hostKey := strings.Join([]string{d.prefix, report.ReturnHostName()}, "/")
 	// init watch
-	watch, err := d.etcdClient.NewWatch(hostKey)
+	watch, err := d.etcdClient.WatchPrefix(context.Background(), hostKey)
 
 	if err != nil {
 		panic("watch err: " + err.Error())

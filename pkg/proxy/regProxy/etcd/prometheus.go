@@ -7,17 +7,17 @@ import (
 	"strings"
 	"time"
 
+	"github.com/coreos/etcd/clientv3"
+	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/douyu/juno-agent/util"
 	"github.com/douyu/jupiter/pkg/xlog"
-	"go.etcd.io/etcd/clientv3"
-	"go.etcd.io/etcd/mvcc/mvccpb"
 )
 
 func (d *DataSource) watchPrometheus(path string) {
 	// etcd的key用作配置数据读取
 	hostKey := strings.Join([]string{"/prometheus", "job"}, "/")
 	// init watch
-	watch, err := d.etcdClient.NewWatch(hostKey)
+	watch, err := d.etcdClient.WatchPrefix(context.Background(), hostKey)
 
 	if err != nil {
 		panic("watch err: " + err.Error())

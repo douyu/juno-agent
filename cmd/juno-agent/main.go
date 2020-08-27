@@ -16,11 +16,12 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"os"
+
 	"github.com/douyu/juno-agent/pkg/core"
 	"github.com/douyu/juno-agent/util"
 	"github.com/douyu/jupiter/pkg/flag"
-	"log"
-	"os"
 )
 
 func init() {
@@ -74,7 +75,6 @@ func main() {
 		}
 	}
 	eng := core.NewEngine()
-	eng.SetGovernor("127.0.0.1:9099")
 
 	if err := eng.Run(); err != nil {
 		log.Fatal(err)
