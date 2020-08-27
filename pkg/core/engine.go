@@ -17,6 +17,7 @@ package core
 import (
 	"context"
 	"fmt"
+	"github.com/douyu/juno-agent/pkg/job"
 	"sync"
 	"time"
 
@@ -80,6 +81,7 @@ func NewEngine() *Engine {
 		eng.startHealCheck,
 		eng.serveGRPC,
 		eng.serveHTTP,
+		eng.startWorker,
 	); err != nil {
 		xlog.Panic("new engine", xlog.Any("err", err))
 	}
@@ -252,6 +254,11 @@ func (eng *Engine) startReportStatus() error {
 func (eng *Engine) startHealCheck() error {
 	eng.healthCheck = check.StdConfig("healthCheck").Build()
 	return nil
+}
+
+func (eng *Engine) startWorker() error {
+	worker := job.StdConfig("worker").Build()
+	return worker.Run()
 }
 
 func (eng *Engine) loadServiceConfiguration(name string) interface{} {

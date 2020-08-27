@@ -46,6 +46,12 @@
         enable = true
     [plugin.process]
         enable = false
+    [plugin.worker]
+        reqTimeout = 10
+        etcdConfigKey = "myetcd"
+[jupiter.etcdv3.myetcd]
+    endpoints = ["mps.longsys.com:2379"]
+    connectTimeout = "10s"
 [jupiter.logger.default]
     name = "default"
     debug = true

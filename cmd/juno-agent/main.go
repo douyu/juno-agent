@@ -62,6 +62,11 @@ func init() {
 			Usage:   "use --nginx=true, show nginx plugin true or false",
 			Default: false,
 		},
+		&flag.BoolFlag{
+			Name:    "worker",
+			Usage:   "use --worker=true, show worker plugin true or false",
+			Default: false,
+		},
 	)
 
 }
@@ -75,6 +80,7 @@ func main() {
 		}
 	}
 	eng := core.NewEngine()
+	//eng.SetGovernor("127.0.0.1:9099")
 
 	if err := eng.Run(); err != nil {
 		log.Fatal(err)
