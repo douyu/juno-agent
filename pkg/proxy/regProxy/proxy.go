@@ -24,14 +24,14 @@ import (
 	"strings"
 	"sync"
 
+	pb "github.com/coreos/etcd/etcdserver/etcdserverpb"
+	"github.com/coreos/etcd/proxy/grpcproxy"
 	"github.com/douyu/juno-agent/pkg/proxy/regProxy/etcd"
 	"github.com/douyu/juno-agent/pkg/structs"
 	"github.com/douyu/jupiter/pkg/client/etcdv3"
 	"github.com/douyu/jupiter/pkg/util/xdebug"
 	"github.com/douyu/jupiter/pkg/util/xstring"
 	"github.com/douyu/jupiter/pkg/xlog"
-	pb "go.etcd.io/etcd/etcdserver/etcdserverpb"
-	"go.etcd.io/etcd/proxy/grpcproxy"
 	"google.golang.org/grpc/examples/helloworld/helloworld"
 )
 

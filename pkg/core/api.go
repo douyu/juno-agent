@@ -17,6 +17,7 @@ package core
 import (
 	"strconv"
 
+	pb "github.com/coreos/etcd/etcdserver/etcdserverpb"
 	"github.com/douyu/juno-agent/pkg/file"
 	"github.com/douyu/juno-agent/pkg/model"
 	"github.com/douyu/juno-agent/pkg/pmt"
@@ -25,7 +26,6 @@ import (
 	"github.com/douyu/jupiter/pkg/server/xecho"
 	"github.com/douyu/jupiter/pkg/server/xgrpc"
 	"github.com/labstack/echo/v4"
-	pb "go.etcd.io/etcd/etcdserver/etcdserverpb"
 	"google.golang.org/grpc/examples/helloworld/helloworld"
 )
 

@@ -16,11 +16,12 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"os"
+
 	"github.com/douyu/juno-agent/pkg/core"
 	"github.com/douyu/juno-agent/util"
 	"github.com/douyu/jupiter/pkg/flag"
-	"log"
-	"os"
 )
 
 func init() {
