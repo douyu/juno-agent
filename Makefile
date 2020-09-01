@@ -5,7 +5,7 @@ BASE_PATH:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 SCRIPT_PATH:=$(BASE_PATH)/script
 APP_NAME:=$(shell basename $(BASE_PATH))
 COMPILE_OUT:=$(BASE_PATH)/release
-APP_VERSION:=0.2.0
+APP_VERSION:=0.4.0
 
 
 all:print fmt buildAgent
@@ -75,4 +75,4 @@ build_data:
 	@$(SCRIPT_PATH)/build/build_data.sh $(APP_NAME) $(APP_VERSION) $(BASE_PATH) $(COMPILE_OUT)/$(APP_VERSION)
 	@echo -e "\n"
 tar:
-	@cd $(BASE_PATH)/release && tar zcvf $(APP_VERSION).tar.gz $(APP_VERSION)
+	@cd $(BASE_PATH)/release && tar zcvf juno-agent_$(APP_VERSION).tar.gz $(APP_VERSION)

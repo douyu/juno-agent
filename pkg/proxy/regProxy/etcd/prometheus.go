@@ -7,17 +7,17 @@ import (
 	"strings"
 	"time"
 
+	"github.com/coreos/etcd/clientv3"
+	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/douyu/juno-agent/util"
 	"github.com/douyu/jupiter/pkg/xlog"
-	"go.etcd.io/etcd/clientv3"
-	"go.etcd.io/etcd/mvcc/mvccpb"
 )
 
 func (d *DataSource) watchPrometheus(path string) {
 	// etcd的key用作配置数据读取
 	hostKey := strings.Join([]string{"/prometheus", "job"}, "/")
 	// init watch
-	watch, err := d.etcdClient.NewWatch(hostKey)
+	watch, err := d.etcdClient.WatchPrefix(context.Background(), hostKey)
 
 	if err != nil {
 		panic("watch err: " + err.Error())
@@ -29,29 +29,29 @@ func (d *DataSource) watchPrometheus(path string) {
 				switch event.Type {
 				case mvccpb.DELETE:
 					key, value := string(event.Kv.Key), string(event.Kv.Value)
-					fmt.Println("key", key, "value", value)
-
 					keyArr := strings.Split(key, "/")
-					if len(keyArr) != 5 {
-						fmt.Println("key", key, "value", value)
+					if len(keyArr) != 5 && len(keyArr) != 6 {
+						xlog.Error("watchPrometheus", xlog.String("key", key), xlog.String("value", value))
 						break
 					}
-					os.Remove("/tmp/etc/prometheus/conf/" + keyArr[3] + ".yml")
+					filename := keyArr[3] + "_" + value
+					_ = os.Remove(path + "/" + filename + ".yml")
 				case mvccpb.PUT:
 					key, value := string(event.Kv.Key), string(event.Kv.Value)
 					keyArr := strings.Split(key, "/")
-					if len(keyArr) != 5 {
-						fmt.Println("key", key, "value", value)
+					if len(keyArr) != 5 && len(keyArr) != 6 {
+						xlog.Error("watchPrometheus", xlog.String("key", key), xlog.String("value", value))
 						break
 					}
+					filename := keyArr[3] + "_" + value
 					content := `
 - targets:
 
     - "` + value + `"
   labels:
     instance: ` + keyArr[4] + `
-    job: ` + keyArr[3]
-					util.WriteFile(path+"/"+keyArr[3]+".yml", content)
+    job: ` + filename
+					_ = util.WriteFile(path+"/"+filename+".yml", content)
 				}
 			}
 		}
@@ -74,18 +74,21 @@ func (d *DataSource) PrometheusConfigScanner(path string) {
 	for _, kv := range resp.Kvs {
 		key, value := string(kv.Key), string(kv.Value)
 		keyArr := strings.Split(key, "/")
-		if len(keyArr) != 5 {
-			fmt.Println("key", key, "value", value)
-			break
+		fmt.Println("key", key, "value", value, "len(keyArr)", len(keyArr))
+		if len(keyArr) != 5 && len(keyArr) != 6 {
+			xlog.Error("PrometheusConfigScanner", xlog.String("key", key), xlog.String("value", value))
+			continue
 		}
+		filename := keyArr[3] + "_" + value
+
 		content := `
 - targets:
 
     - "` + value + `"
   labels:
     instance: ` + keyArr[4] + `
-    job: ` + keyArr[3]
-		util.WriteFile(path+"/"+keyArr[3]+".yml", content)
+    job: ` + filename
+		_ = util.WriteFile(path+"/"+filename+".yml", content)
 	}
 	return
 }

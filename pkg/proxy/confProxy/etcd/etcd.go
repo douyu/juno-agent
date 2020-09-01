@@ -21,8 +21,11 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
+	"github.com/coreos/etcd/clientv3"
+	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/douyu/juno-agent/pkg/report"
 	"github.com/douyu/juno-agent/pkg/structs"
 	"github.com/douyu/juno-agent/util"
@@ -33,8 +36,6 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
-	"go.etcd.io/etcd/clientv3"
-	"go.etcd.io/etcd/mvcc/mvccpb"
 )
 
 var (
@@ -44,10 +45,12 @@ var (
 
 // DataSource etcd conf datasource
 type DataSource struct {
-	etcdClient *etcdv3.Client
-	prefix     string
+	etcdClient       *etcdv3.Client
+	etcdClientReport *etcdv3.Client
+	prefix           string
 	// 用于记录长轮训的应用信息
 	jm list.List // *job
+	mu sync.Mutex
 }
 
 // configNode etcd node chan info
@@ -59,8 +62,9 @@ type configNode struct {
 // NewETCDDataSource ...
 func NewETCDDataSource(prefix string, etcdConfig ConfDataSourceEtcd) *DataSource {
 	dataSource := &DataSource{
-		etcdClient: etcdv3.RawConfig("plugin.confProxy.etcd").Build(),
-		prefix:     prefix,
+		etcdClient:       etcdv3.RawConfig("plugin.confProxy.etcd").Build(),
+		etcdClientReport: etcdv3.RawConfig("plugin.confProxy.etcd").Build(),
+		prefix:           prefix,
 	}
 	xgo.Go(dataSource.watch)
 	return dataSource
@@ -171,7 +175,7 @@ func (d *DataSource) watch() {
 	// etcd的key用作配置数据读取
 	hostKey := strings.Join([]string{d.prefix, report.ReturnHostName()}, "/")
 	// init watch
-	watch, err := d.etcdClient.NewWatch(hostKey)
+	watch, err := d.etcdClient.WatchPrefix(context.Background(), hostKey)
 
 	if err != nil {
 		panic("watch err: " + err.Error())
@@ -216,6 +220,8 @@ func (d *DataSource) ListenAppConfig(ctx echo.Context, key string) chan *structs
 		key: key,
 		ch:  make(chan *structs.ConfNode),
 	}
+	d.mu.Lock()
+	defer d.mu.Unlock()
 	d.jm.PushBack(node)
 	return node.ch
 }
@@ -292,8 +298,12 @@ func (d *DataSource) report(key, value string) error {
 		IP:         ip,
 		HealthPort: confuKeys.Port,
 	}
-	if _, err := d.etcdClient.Put(ctx, reportKey, reportValue.JSONString()); err != nil {
-		return err
+	if _, err := d.etcdClientReport.Put(ctx, reportKey, reportValue.JSONString()); err != nil {
+		//if err == auth.ErrInvalidAuthToken {
+		d.etcdClientReport = etcdv3.RawConfig("plugin.confProxy.etcd").Build()
+		if _, err := d.etcdClientReport.Put(ctx, reportKey, reportValue.JSONString()); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -301,6 +311,8 @@ func (d *DataSource) report(key, value string) error {
 // StoreAppChanInfo 监听到etcd的变化后，更新chan的信息
 func (d *DataSource) StoreAppChanInfo(key, rawKey string, val *structs.ConfNode) {
 	var n *list.Element
+	d.mu.Lock()
+	defer d.mu.Unlock()
 	for item := d.jm.Front(); nil != item; item = n {
 		node := item.Value.(*configNode)
 		n = item.Next()
