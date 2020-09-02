@@ -120,6 +120,10 @@ func (eng *Engine) startConfProxy() error {
 // startRegProxy start app regist proxy plugin
 func (eng *Engine) startRegProxy() error {
 	eng.regProxy = regProxy.StdConfig("regProxy").Build()
+	if eng.regProxy == nil {
+		return nil
+	}
+
 	if err := eng.regProxy.Start(); err != nil {
 		return err
 	}

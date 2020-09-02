@@ -1,9 +1,5 @@
 [plugin]
     [plugin.regProxy]
-        # 注册中心地址
-        endpoints=["127.0.0.1:2379"]
-        timeout="3s"
-        secure=false
         enable = true
         [plugin.regProxy.prometheus]
             enable = true
@@ -19,9 +15,6 @@
             enable=false
             dsn=""
             secure=false
-        [plugin.confProxy.etcd]
-            enable=true
-            endpoints=["127.0.0.1:2379"]
     [plugin.supervisor]
         enable = true
         dir = "/etc/supervisor/conf.d"
@@ -48,13 +41,24 @@
         enable = false
     [plugin.worker]
         reqTimeout = 10
-        etcdConfigKey = "myetcd"
-[jupiter.etcdv3.myetcd]
-    endpoints = ["mps.longsys.com:2379"]
+
+# service registry etcd
+[jupiter.etcdv3.register]
+    endpoints = ["127.0.0.1:2379"]
     connectTimeout = "10s"
+
+# default etcd (config-publish / cronjob-dispatch / etc...)
+[jupiter.etcdv3.default]
+    endpoints = ["127.0.0.1:2379"]
+    connectTimeout = "10s"
+
 [jupiter.logger.default]
     name = "default"
     debug = true
+[jupiter.logger.cronjob]
+    name = "cronjob.log"
+    level = "debug"
+
 [jupiter.server]
   [jupiter.server.grpc]
     host = "0.0.0.0"
