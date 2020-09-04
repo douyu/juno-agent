@@ -60,9 +60,12 @@ type Job struct {
 
 	// 用于访问etcd
 	*worker `json:"-"`
+<<<<<<< feature/cronjob
 
 	mutex  *etcdv3.Mutex
 	locked bool
+=======
+>>>>>>> master
 }
 
 // NewEtcdTimeoutContext return a new etcdTimeoutContext
@@ -207,6 +210,7 @@ func (j *Job) ValidRules() error {
 	return nil
 }
 
+<<<<<<< feature/cronjob
 func (j *Job) Lock() error {
 	var err error
 	j.mutex, err = j.Client.NewMutex(LockKeyPrefix+j.ID, concurrency.WithTTL(10))
@@ -233,6 +237,8 @@ func (j *Job) Unlock() {
 	}
 }
 
+=======
+>>>>>>> master
 type Timer struct {
 	ID    string   `json:"id"`
 	Cron  string   `json:"timer"`
@@ -293,6 +299,24 @@ func (c *Cmd) GetID() string {
 }
 
 func (c *Cmd) Run() error {
+<<<<<<< feature/cronjob
+=======
+
+	if c.Job.JobType == TypeAlone {
+		mutex, err := etcd.NewMutex(c.Client.Client, LockKeyPrefix+c.Job.ID, concurrency.WithTTL(5))
+		if err != nil {
+			c.logger.Info("job get lock error : ", xlog.FieldErr(err))
+			return err
+		}
+		err = mutex.Lock(time.Duration(c.ReqTimeout) * time.Second)
+		if err != nil {
+			c.logger.Info("job lock is failed : ", xlog.FieldErr(err))
+			return err
+		}
+		defer mutex.Unlock()
+	}
+
+>>>>>>> master
 	if c.Job.RetryCount <= 0 {
 		err := c.Job.Run()
 		if err != nil {
