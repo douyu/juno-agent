@@ -25,8 +25,7 @@ var content = `
 [program:testing]
 directory=/home/www/server/testing
 environment=LD_LIBRARY_PATH="/home/www/server/testing/lib",JUNO_TIME="{{JunoTime}}"
-command=/home/www/server/testing/bin/testing --host={{ServerName}} --config=./config/config-pre.toml
-user=www
+command=/home/www/server/%(program_name)s/bin/%(program_name)s --host={{ServerName}} --config=/home/www/.config/piquet/wsd-live-app-home-go/config/config-trunk.toml
 autostart=true
 autorestart=true
 startsecs=10

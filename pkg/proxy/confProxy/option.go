@@ -37,7 +37,6 @@ type Config struct {
 	Secure  bool
 	Enable  bool                    // 是否开启开插件
 	Mysql   ConfDataSourceMysql     `json:"mysql"`
-	Etcd    etcd.ConfDataSourceEtcd `json:"etcd"`
 }
 
 // ConfDataSourceMysql mysql dataSource
@@ -84,25 +83,13 @@ func DefaultConfig() Config {
 			Enable: false,
 			Dsn:    "127.0.0.1:6379",
 		},
-		Etcd: etcd.ConfDataSourceEtcd{
-			Enable:                        false,
-			Secure:                        false,
-			EndPoints:                     []string{"127.0.0.1:2379"},
-		},
 	}
 }
 
 // Build  new the instance
 func (c *Config) Build() *ConfProxy {
 	if c.Enable {
-		switch c.Etcd.Enable {
-		case true:
-			xlog.Info("plugin", xlog.String("appConf.etcd", "start"))
-			return NewConfProxy(c.Enable, etcd.NewETCDDataSource(c.Prefix, c.Etcd))
-		default:
-			xlog.Info("plugin", xlog.String("appConf.mysql", "start"))
-		}
-		// todo mysql implement
+		return NewConfProxy(c.Enable, etcd.NewETCDDataSource(c.Prefix))
 	}
 	return nil
 }

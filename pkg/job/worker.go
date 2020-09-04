@@ -17,15 +17,15 @@ package job
 import (
 	"context"
 	"encoding/json"
-	"strconv"
-	"syscall"
-
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/douyu/juno-agent/pkg/job/etcd"
+	"github.com/douyu/juno-agent/util"
 	"github.com/douyu/jupiter/pkg/client/etcdv3"
 	"github.com/douyu/jupiter/pkg/util/xgo"
 	"github.com/douyu/jupiter/pkg/xlog"
+	"github.com/sony/sonyflake"
+	"strconv"
 )
 
 // Node 执行 cron 命令服务的结构体
@@ -41,18 +41,20 @@ type worker struct {
 	cmds        map[string]*Cmd
 	runningJobs map[string]context.CancelFunc
 
-	done chan struct{}
+	done      chan struct{}
+	taskIdGen *sonyflake.Sonyflake
 }
 
 func NewWorker(conf *Config) (w *worker) {
 	w = &worker{
 		Config:         conf,
-		ID:             conf.AppIP + ":" + conf.HostName,
-		Client:         etcdv3.StdConfig(conf.EtcdConfigKey).Build(),
+		ID:             conf.HostName,
+		Client:         etcdv3.StdConfig("default").Build(),
 		ImmediatelyRun: false,
 		cmds:           make(map[string]*Cmd),
 		runningJobs:    make(map[string]context.CancelFunc),
 		done:           make(chan struct{}),
+		taskIdGen:      sonyflake.NewSonyflake(sonyflake.Settings{}), // default setting
 	}
 
 	w.Cron = newCron(w)
@@ -63,13 +65,12 @@ func NewWorker(conf *Config) (w *worker) {
 }
 
 func (w *worker) Run() error {
-
 	w.logger.Info("worker run...")
 
 	w.Cron.Run()
 	go w.watchJobs()
 	go w.watchOnce()
-	go w.watchExcutingProc()
+	go w.watchExecutingProc()
 
 	return nil
 }
@@ -154,7 +155,7 @@ func (w *worker) watchOnce() {
 	ctx, cancelFunc := NewEtcdTimeoutContext(w)
 	defer cancelFunc()
 
-	watch, err := etcd.WatchPrefix(w.Client, ctx, OnceKeyPrefix)
+	watch, err := etcd.WatchPrefix(w.Client, ctx, OnceKeyPrefix+w.HostName)
 	if err != nil {
 		panic(err)
 	}
@@ -165,24 +166,25 @@ func (w *worker) watchOnce() {
 			case event.IsCreate(), event.IsModify():
 				w.logger.Info("once task...")
 
-				job, ok := w.jobs[GetIDFromKey(string(event.Kv.Key))]
-				if !ok {
+				job, err := w.GetOnceJobFromKv(event.Kv.Key, event.Kv.Value)
+				if err != nil {
+					xlog.Error("get job from kv failed", xlog.String("err", err.Error()))
 					continue
 				}
 
 				job.worker = w
-				go job.RunWithRecovery()
+				go job.RunWithRecovery(WithTaskID(job.TaskID))
 			}
 		}
 	})
 }
 
 // watch任务执行列表，执行强杀操作
-func (w *worker) watchExcutingProc() {
+func (w *worker) watchExecutingProc() {
 	ctx, cancelFunc := NewEtcdTimeoutContext(w)
 	defer cancelFunc()
 
-	watch, err := etcd.WatchPrefix(w.Client, ctx, ProcKeyPrefix+w.ID)
+	watch, err := etcd.WatchPrefix(w.Client, ctx, ProcKeyPrefix)
 	if err != nil {
 		panic(err)
 	}
@@ -200,6 +202,10 @@ func (w *worker) watchExcutingProc() {
 					continue
 				}
 
+				if process.NodeID != w.ID {
+					continue
+				}
+
 				val := string(event.Kv.Value)
 				pv := &ProcessVal{}
 				err = json.Unmarshal([]byte(val), pv)
@@ -208,7 +214,7 @@ func (w *worker) watchExcutingProc() {
 				}
 				process.ProcessVal = *pv
 				if process.Killed {
-					w.KillExcutingProc(process)
+					w.KillExecutingProc(process)
 				}
 			}
 		}
@@ -250,6 +256,10 @@ func (w *worker) modJob(job *Job) {
 
 	// 筛选出需要删除的任务
 	for id, cmd := range cmds {
+		if util.InStringArray(cmd.Nodes, w.HostName) < 0 {
+			continue
+		}
+
 		w.modCmd(cmd)
 		delete(prevCmds, id)
 	}
@@ -270,6 +280,10 @@ func (w *worker) addJob(job *Job) {
 	}
 
 	for _, cmd := range cmds {
+		if util.InStringArray(cmd.Nodes, w.HostName) < 0 {
+			continue
+		}
+
 		w.addCmd(cmd)
 	}
 	return
@@ -281,8 +295,7 @@ func (w *worker) delCmd(cmd *Cmd) {
 		delete(w.cmds, cmd.GetID())
 		w.Cron.Remove(c.schEntryID)
 	}
-	w.logger.Infof("job[%s] group[%s] rule[%s] timer[%s] has deleted", cmd.Job.ID,
-		cmd.Job.Group, cmd.JobRule.ID, cmd.JobRule.Timer)
+	w.logger.Infof("job[%s] rule[%s] timer[%s] has deleted", cmd.Job.ID, cmd.Timer.ID, cmd.Timer.Cron)
 }
 
 func (w *worker) modCmd(cmd *Cmd) {
@@ -292,25 +305,27 @@ func (w *worker) modCmd(cmd *Cmd) {
 		return
 	}
 
-	sch := c.JobRule.Timer
+	entryID := c.schEntryID
+	sch := c.Timer.Cron
 	*c = *cmd
+	c.schEntryID = entryID
 
 	// 节点执行时间改变，更新 cron
 	// 否则不用更新 cron
-	if c.JobRule.Timer != sch {
-		c.schEntryID = w.Cron.Schedule(c.JobRule.Schedule, c)
+	if c.Timer.Cron != sch {
+		w.Cron.Remove(entryID)
+		c.schEntryID = w.Cron.Schedule(c.Timer.Schedule, c)
 	}
 
-	w.logger.Infof("job[%s] group[%s] rule[%s] timer[%s] has updated", c.Job.ID, c.Job.Group, c.JobRule.ID, c.JobRule.Timer)
+	w.logger.Infof("job[%s]rule[%s] timer[%s] has updated", c.Job.ID, c.Timer.ID, c.Timer.Cron)
 }
 
 func (w *worker) addCmd(cmd *Cmd) {
-	cmd.schEntryID = w.Cron.Schedule(cmd.JobRule.Schedule, cmd)
+	cmd.schEntryID = w.Cron.Schedule(cmd.Timer.Schedule, cmd)
 	w.cmds[cmd.GetID()] = cmd
 
-	w.logger.Infof("job[%s] group[%s] rule[%s] timer[%s] has added",
-		cmd.Job.ID, cmd.Job.Group,
-		cmd.JobRule.ID, cmd.JobRule.Timer)
+	w.logger.Infof("job[%s] rule[%s] timer[%s] has added",
+		cmd.Job.ID, cmd.Timer.ID, cmd.Timer.Cron)
 	return
 }
 
@@ -329,9 +344,24 @@ func (w *worker) GetJobContentFromKv(key []byte, value []byte) (*Job, error) {
 	return job, nil
 }
 
-func (w *worker) KillExcutingProc(process *Process) {
+func (w *worker) GetOnceJobFromKv(key []byte, value []byte) (*OnceJob, error) {
+	job := &OnceJob{}
+
+	if err := json.Unmarshal(value, job); err != nil {
+		w.logger.Warnf("job[%s] unmarshal err: %s", key, err.Error())
+		return nil, err
+	}
+	if err := job.ValidRules(); err != nil {
+		w.logger.Warnf("valid rules [%s] err: %s", key, err.Error())
+		return nil, err
+	}
+
+	return job, nil
+}
+
+func (w *worker) KillExecutingProc(process *Process) {
 	pid, _ := strconv.Atoi(process.ID)
-	if err := syscall.Kill(-pid, syscall.SIGKILL); err != nil {
+	if err := killProcess(pid); err != nil {
 		w.logger.Warnf("process:[%d] force kill failed, error:[%s]", pid, err)
 		return
 	}
