@@ -2,7 +2,6 @@ package etcd
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -60,7 +59,6 @@ func (d *DataSource) watchPrometheus(path string) {
 
 // PrometheusConfigScanner ..
 func (d *DataSource) PrometheusConfigScanner(path string) {
-
 	// etcd的key用作配置数据读取
 	hostKey := strings.Join([]string{"/prometheus", "job"}, "/")
 
@@ -74,7 +72,6 @@ func (d *DataSource) PrometheusConfigScanner(path string) {
 	for _, kv := range resp.Kvs {
 		key, value := string(kv.Key), string(kv.Value)
 		keyArr := strings.Split(key, "/")
-		fmt.Println("key", key, "value", value, "len(keyArr)", len(keyArr))
 		if len(keyArr) != 5 && len(keyArr) != 6 {
 			xlog.Error("PrometheusConfigScanner", xlog.String("key", key), xlog.String("value", value))
 			continue
