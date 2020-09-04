@@ -25,8 +25,8 @@ func init() {
 type Jobs map[string]*Job
 
 const (
-	TypeNormal = 1 // 运行各节点都能运行任务
-	TypeAlone  = 2 // 同一时间只允许一个节点一个任务运行
+	TypeNormal = 0 // 运行各节点都能运行任务
+	TypeAlone  = 1 // 同一时间只允许一个节点一个任务运行
 )
 
 // 需要执行的 cron cmd 命令
@@ -38,9 +38,8 @@ type Job struct {
 	Timers  []*Timer `json:"timers"`
 	Enable  bool     `json:"enable"`  // 可手工控制的状态
 	Timeout int64    `json:"timeout"` // 单位时间秒，任务执行时间超时设置，大于 0 时有效
-
-	ExecutedAt *time.Time `json:"executed_at"`
-	FinishedAt *time.Time `json:"finished_at"`
+	Env     string   `json:"env"`
+	Zone    string   `json:"zone"`
 
 	// 执行任务失败重试次数
 	// 默认为 0，不重试
@@ -51,8 +50,8 @@ type Job struct {
 	RetryInterval int `json:"retry_interval"`
 
 	// 任务类型
-	// 1: 普通任务，各节点均可运行
-	// 2: 单机任务，同时只能单节点在线
+	// 0: 普通任务，各节点均可运行
+	// 1: 单机任务，同时只能单节点在线
 	JobType int `json:"job_type"`
 
 	// 执行任务的结点，用于记录 job log
@@ -78,6 +77,7 @@ func (j *Job) Cmds() (cmds map[string]*Cmd) {
 		cmd := &Cmd{
 			Job:   j,
 			Timer: r,
+			Nodes: r.Nodes,
 		}
 		cmds[cmd.GetID()] = cmd
 	}
@@ -141,6 +141,8 @@ func (j *Job) Run(taskOptions ...TaskOption) error {
 	cmd.Stderr = &consoleLogBuf
 	if err := cmd.Start(); err != nil {
 		j.logger.Info(consoleLogBuf.String())
+
+		consoleLogBuf.WriteString(err.Error())
 		_ = task.SetStatus(CronTaskStatusFailed, consoleLogBuf.String())
 		return err
 	}
@@ -149,19 +151,29 @@ func (j *Job) Run(taskOptions ...TaskOption) error {
 		ID:     strconv.Itoa(cmd.Process.Pid),
 		JobID:  j.ID,
 		NodeID: j.runOn,
+		TaskID: task.TaskID,
 		ProcessVal: ProcessVal{
 			Time: time.Now(),
 		},
 	}
 	proc.Start(j)
-	defer proc.Stop(j)
+	defer func() {
+		go func() {
+			time.Sleep(3 * time.Second)
+			proc.Stop(j)
+		}()
+	}()
 
 	if err := cmd.Wait(); err != nil {
 		j.logger.Error(consoleLogBuf.String())
-
 		consoleLogBuf.WriteString(err.Error())
 
-		_ = task.SetStatus(CronTaskStatusFailed, consoleLogBuf.String())
+		if ctx.Err() == context.DeadlineExceeded {
+			_ = task.SetStatus(CronTaskStatusTimeout, consoleLogBuf.String())
+		} else {
+			_ = task.SetStatus(CronTaskStatusFailed, consoleLogBuf.String())
+		}
+
 		return err
 	}
 
@@ -193,8 +205,9 @@ func (j *Job) ValidRules() error {
 }
 
 type Timer struct {
-	ID   string `json:"id"`
-	Cron string `json:"timer"`
+	ID    string   `json:"id"`
+	Cron  string   `json:"timer"`
+	Nodes []string `json:"nodes"`
 
 	Schedule Schedule `json:"-"`
 }
@@ -239,19 +252,21 @@ func GetCurrentDirectory() string {
 }
 
 type Cmd struct {
+	Nodes []string
+
 	*Job
 	*Timer
 	schEntryID EntryID
 }
 
 func (c *Cmd) GetID() string {
-	return c.Job.ID + c.Timer.ID
+	return c.Job.ID + "-" + c.Timer.ID
 }
 
 func (c *Cmd) Run() error {
 
 	if c.Job.JobType == TypeAlone {
-		mutex, err := etcd.NewMutex(c.Client.Client, LockKeyPrefix, concurrency.WithTTL(5))
+		mutex, err := etcd.NewMutex(c.Client.Client, LockKeyPrefix+c.Job.ID, concurrency.WithTTL(5))
 		if err != nil {
 			c.logger.Info("job get lock error : ", xlog.FieldErr(err))
 			return err
@@ -275,7 +290,6 @@ func (c *Cmd) Run() error {
 	for i := 0; i <= c.Job.RetryCount; i++ {
 		if err := c.Job.Run(); err != nil {
 			c.logger.Info("job run failed : ", xlog.FieldErr(err))
-			return err
 		}
 
 		if c.Job.RetryInterval > 0 {

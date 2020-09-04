@@ -20,6 +20,7 @@ import (
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/douyu/juno-agent/pkg/job/etcd"
+	"github.com/douyu/juno-agent/util"
 	"github.com/douyu/jupiter/pkg/client/etcdv3"
 	"github.com/douyu/jupiter/pkg/util/xgo"
 	"github.com/douyu/jupiter/pkg/xlog"
@@ -47,7 +48,7 @@ type worker struct {
 func NewWorker(conf *Config) (w *worker) {
 	w = &worker{
 		Config:         conf,
-		ID:             conf.AppIP + ":" + conf.HostName,
+		ID:             conf.HostName,
 		Client:         etcdv3.StdConfig("default").Build(),
 		ImmediatelyRun: false,
 		cmds:           make(map[string]*Cmd),
@@ -183,7 +184,7 @@ func (w *worker) watchExecutingProc() {
 	ctx, cancelFunc := NewEtcdTimeoutContext(w)
 	defer cancelFunc()
 
-	watch, err := etcd.WatchPrefix(w.Client, ctx, ProcKeyPrefix+w.ID)
+	watch, err := etcd.WatchPrefix(w.Client, ctx, ProcKeyPrefix)
 	if err != nil {
 		panic(err)
 	}
@@ -198,6 +199,10 @@ func (w *worker) watchExecutingProc() {
 				process, err := GetProcFromKey(key)
 				if err != nil {
 					w.logger.Warnf("err: %s, kv: %s", err.Error(), event.Kv.String())
+					continue
+				}
+
+				if process.NodeID != w.ID {
 					continue
 				}
 
@@ -251,6 +256,10 @@ func (w *worker) modJob(job *Job) {
 
 	// 筛选出需要删除的任务
 	for id, cmd := range cmds {
+		if util.InStringArray(cmd.Nodes, w.HostName) < 0 {
+			continue
+		}
+
 		w.modCmd(cmd)
 		delete(prevCmds, id)
 	}
@@ -271,6 +280,10 @@ func (w *worker) addJob(job *Job) {
 	}
 
 	for _, cmd := range cmds {
+		if util.InStringArray(cmd.Nodes, w.HostName) < 0 {
+			continue
+		}
+
 		w.addCmd(cmd)
 	}
 	return
@@ -292,12 +305,15 @@ func (w *worker) modCmd(cmd *Cmd) {
 		return
 	}
 
+	entryID := c.schEntryID
 	sch := c.Timer.Cron
 	*c = *cmd
+	c.schEntryID = entryID
 
 	// 节点执行时间改变，更新 cron
 	// 否则不用更新 cron
 	if c.Timer.Cron != sch {
+		w.Cron.Remove(entryID)
 		c.schEntryID = w.Cron.Schedule(c.Timer.Schedule, c)
 	}
 

@@ -6,15 +6,16 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/coreos/etcd/clientv3"
-	"github.com/coreos/etcd/clientv3/concurrency"
+	"github.com/douyu/jupiter/pkg/xlog"
 )
 
 type (
 	Task struct {
 		TaskID uint64
 
-		job *Job
+		job        *Job
+		executedAt time.Time
+		finishedAt *time.Time
 	}
 
 	TaskOption func(t *Task)
@@ -22,11 +23,13 @@ type (
 	CronTaskStatus string
 
 	TaskResult struct {
-		TaskID uint64         `json:"task_id"`
-		Status CronTaskStatus `json:"status"`
-		Job    *Job           `json:"job"`
-		Logs   string         `json:"logs"`
-		RunOn  string         `json:"run_on"`
+		TaskID     uint64         `json:"task_id"`
+		Status     CronTaskStatus `json:"status"`
+		Job        *Job           `json:"job"`
+		Logs       string         `json:"logs"`
+		RunOn      string         `json:"run_on"`
+		ExecutedAt time.Time      `json:"executed_at"`
+		FinishedAt *time.Time     `json:"finished_at"`
 	}
 )
 
@@ -34,19 +37,17 @@ var (
 	CronTaskStatusProcessing CronTaskStatus = "processing"
 	CronTaskStatusSuccess    CronTaskStatus = "success"
 	CronTaskStatusFailed     CronTaskStatus = "failed"
+	CronTaskStatusTimeout    CronTaskStatus = "timeout"
 )
 
 func NewTask(job *Job, ops ...TaskOption) *Task {
-	now := time.Now()
-	job.ExecutedAt = &now
-
 	task := &Task{
-		job: job,
+		job:        job,
+		executedAt: time.Now(),
 	}
 	for _, op := range ops {
 		op(task)
 	}
-
 	if task.TaskID == 0 {
 		id, _ := job.worker.taskIdGen.NextID()
 		task.TaskID = id
@@ -56,33 +57,38 @@ func NewTask(job *Job, ops ...TaskOption) *Task {
 }
 
 func (t *Task) SetStatus(status CronTaskStatus, logs string) error {
-	if status == CronTaskStatusSuccess || status == CronTaskStatusFailed {
+	if status == CronTaskStatusSuccess || status == CronTaskStatusFailed || status == CronTaskStatusTimeout {
 		now := time.Now()
-		t.job.FinishedAt = &now
+		t.finishedAt = &now
 	}
 
-	key := fmt.Sprintf("%s%s/%d", ResultKeyPrefix, t.job.ID, t.TaskID)
-
 	payload := TaskResult{
-		TaskID: t.TaskID,
-		Job:    t.job,
-		Status: status,
-		Logs:   logs,
-		RunOn:  t.job.runOn,
+		TaskID:     t.TaskID,
+		Job:        t.job,
+		Status:     status,
+		Logs:       logs,
+		RunOn:      t.job.HostName,
+		ExecutedAt: t.executedAt,
+		FinishedAt: t.finishedAt,
 	}
 	payloadBytes, _ := json.Marshal(&payload)
 
-	session, err := concurrency.NewSession(t.job.Client.Client, concurrency.WithTTL(600))
-	if err != nil {
-		return err
-	}
-
-	_, err = t.job.Client.Put(context.Background(),
-		key,
+	_, err := t.job.Client.Put(context.Background(),
+		t.Key(),
 		string(payloadBytes),
-		clientv3.WithLease(session.Lease()),
 	)
 	return err
+}
+
+func (t *Task) Key() string {
+	return fmt.Sprintf("%s%s/%d", ResultKeyPrefix, t.job.ID, t.TaskID)
+}
+
+func (t *Task) Stop() {
+	_, err := t.job.Client.Delete(context.Background(), t.Key())
+	if err != nil {
+		t.job.logger.Error("delete task result failed", xlog.FieldErr(err))
+	}
 }
 
 func WithTaskID(taskId uint64) TaskOption {
