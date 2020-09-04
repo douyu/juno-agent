@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/coreos/etcd/clientv3/concurrency"
-	"github.com/douyu/juno-agent/pkg/job/etcd"
+	"github.com/douyu/jupiter/pkg/client/etcdv3"
 	"github.com/douyu/jupiter/pkg/xlog"
 	"go.uber.org/zap"
 )
@@ -60,6 +60,9 @@ type Job struct {
 
 	// 用于访问etcd
 	*worker `json:"-"`
+
+	mutex  *etcdv3.Mutex
+	locked bool
 }
 
 // NewEtcdTimeoutContext return a new etcdTimeoutContext
@@ -204,6 +207,32 @@ func (j *Job) ValidRules() error {
 	return nil
 }
 
+func (j *Job) Lock() error {
+	var err error
+	j.mutex, err = j.Client.NewMutex(LockKeyPrefix+j.ID, concurrency.WithTTL(10))
+	if err != nil {
+		return err
+	}
+
+	err = j.mutex.Lock(3 * time.Second)
+	if err != nil {
+		return err
+	}
+
+	j.locked = true
+
+	return nil
+}
+
+func (j *Job) Unlock() {
+	if j.mutex != nil {
+		err := j.mutex.Unlock()
+		if err != nil {
+			xlog.Error("unlock failed", xlog.FieldErr(err))
+		}
+	}
+}
+
 type Timer struct {
 	ID    string   `json:"id"`
 	Cron  string   `json:"timer"`
@@ -264,21 +293,6 @@ func (c *Cmd) GetID() string {
 }
 
 func (c *Cmd) Run() error {
-
-	if c.Job.JobType == TypeAlone {
-		mutex, err := etcd.NewMutex(c.Client.Client, LockKeyPrefix+c.Job.ID, concurrency.WithTTL(5))
-		if err != nil {
-			c.logger.Info("job get lock error : ", xlog.FieldErr(err))
-			return err
-		}
-		err = mutex.Lock(time.Duration(c.ReqTimeout) * time.Second)
-		if err != nil {
-			c.logger.Info("job lock is failed : ", xlog.FieldErr(err))
-			return err
-		}
-		defer mutex.Unlock()
-	}
-
 	if c.Job.RetryCount <= 0 {
 		err := c.Job.Run()
 		if err != nil {

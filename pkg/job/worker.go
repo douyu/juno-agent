@@ -17,6 +17,9 @@ package job
 import (
 	"context"
 	"encoding/json"
+	"strconv"
+	"strings"
+
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/douyu/juno-agent/pkg/job/etcd"
@@ -25,7 +28,6 @@ import (
 	"github.com/douyu/jupiter/pkg/util/xgo"
 	"github.com/douyu/jupiter/pkg/xlog"
 	"github.com/sony/sonyflake"
-	"strconv"
 )
 
 // Node 执行 cron 命令服务的结构体
@@ -68,6 +70,7 @@ func (w *worker) Run() error {
 	w.logger.Info("worker run...")
 
 	w.Cron.Run()
+	go w.watchLocks()
 	go w.watchJobs()
 	go w.watchOnce()
 	go w.watchExecutingProc()
@@ -229,6 +232,7 @@ func (w *worker) delJob(id string) {
 	}
 
 	delete(w.jobs, id)
+	job.Unlock()
 
 	cmds := job.Cmds()
 	if len(cmds) == 0 {
@@ -243,7 +247,6 @@ func (w *worker) delJob(id string) {
 
 func (w *worker) modJob(job *Job) {
 	oJob, ok := w.jobs[job.ID]
-	// 之前此任务没有在当前结点执行，直接增加任务
 	if !ok {
 		w.addJob(job)
 		return
@@ -270,8 +273,17 @@ func (w *worker) modJob(job *Job) {
 }
 
 func (w *worker) addJob(job *Job) {
-	// 添加任务到当前节点
 	job.worker = w
+
+	if job.JobType == TypeAlone {
+		err := job.Lock()
+		if err != nil {
+			xlog.Info("failed to lock job. ignore it", xlog.String("jobId", job.ID))
+			return
+		}
+	}
+
+	// 添加任务到当前节点
 	w.jobs[job.ID] = job
 
 	cmds := job.Cmds()
@@ -365,4 +377,42 @@ func (w *worker) KillExecutingProc(process *Process) {
 		w.logger.Warnf("process:[%d] force kill failed, error:[%s]", pid, err)
 		return
 	}
+}
+
+func (w *worker) watchLocks() {
+	wch := w.Client.Watch(context.Background(), LockKeyPrefix, clientv3.WithPrefix())
+
+	for ev := range wch {
+		for _, ev := range ev.Events {
+			switch {
+			case ev.Type == clientv3.EventTypeDelete:
+				// watch deleted job and try to lock that job
+				jobId := getJobIDFromLockKey(string(ev.Kv.Key))
+				w.tryGetJob(jobId)
+			}
+		}
+	}
+}
+
+func (w *worker) tryGetJob(jobId string) {
+	resp, err := w.Client.Get(context.Background(), JobsKeyPrefix+jobId)
+	if err != nil {
+		return
+	}
+	if len(resp.Kvs) == 0 {
+		return
+	}
+
+	jobKv := resp.Kvs[0]
+	job, err := w.GetJobContentFromKv(jobKv.Key, jobKv.Value)
+	if err != nil {
+		return
+	}
+
+	w.addJob(job)
+}
+
+func getJobIDFromLockKey(key string) (jobId string) {
+	key = strings.TrimLeft(key, LockKeyPrefix)
+	return strings.Split(key, "/")[0]
 }
