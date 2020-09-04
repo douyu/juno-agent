@@ -11,7 +11,6 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/coreos/etcd/clientv3/concurrency"
@@ -20,55 +19,47 @@ import (
 	"go.uber.org/zap"
 )
 
-var jobExecLogger *zap.Logger
-
 func init() {
-	var err error
-	jobExecLogger, err = NewLogger()
-	if err != nil {
-		panic(err)
-	}
 }
 
 type Jobs map[string]*Job
 
 const (
-	JobTypeNormal = iota // 运行各节点都能运行任务
-	JobTypeAlone         // 同一时间只允许一个节点一个任务运行
+	TypeNormal = 0 // 运行各节点都能运行任务
+	TypeAlone  = 1 // 同一时间只允许一个节点一个任务运行
 )
 
 // 需要执行的 cron cmd 命令
 // 注册到 /cronsun/cmd/<id>
 type Job struct {
-	ID      string     `json:"id"`
-	Name    string     `json:"name"`
-	Group   string     `json:"group"`
-	Command string     `json:"cmd"`
-	User    string     `json:"user"`
-	Rules   []*JobRule `json:"rules"`
-	Pause   bool       `json:"pause"`   // 可手工控制的状态
-	Timeout int64      `json:"timeout"` // 单位时间秒，任务执行时间超时设置，大于 0 时有效
+	ID      string   `json:"id"`
+	Name    string   `json:"name"`
+	Script  string   `json:"script"`
+	Timers  []*Timer `json:"timers"`
+	Enable  bool     `json:"enable"`  // 可手工控制的状态
+	Timeout int64    `json:"timeout"` // 单位时间秒，任务执行时间超时设置，大于 0 时有效
+	Env     string   `json:"env"`
+	Zone    string   `json:"zone"`
+
 	// 执行任务失败重试次数
 	// 默认为 0，不重试
-	Retry int `json:"retry"`
+	RetryCount int `json:"retry_count"`
+
 	// 执行任务失败重试时间间隔
 	// 单位秒，如果不大于 0 则马上重试
-	Interval int `json:"interval"`
+	RetryInterval int `json:"retry_interval"`
+
 	// 任务类型
 	// 0: 普通任务，各节点均可运行
 	// 1: 单机任务，同时只能单节点在线
-	JobType int `json:"kind"`
+	JobType int `json:"job_type"`
 
 	// 执行任务的结点，用于记录 job log
 	runOn    string // worker id
 	hostname string
-	ip       string
-
-	// 用于存储分隔后的任务
-	cmd []string
 
 	// 用于访问etcd
-	*worker
+	*worker `json:"-"`
 }
 
 // NewEtcdTimeoutContext return a new etcdTimeoutContext
@@ -78,14 +69,15 @@ func NewEtcdTimeoutContext(w *worker) (context.Context, context.CancelFunc) {
 
 func (j *Job) Cmds() (cmds map[string]*Cmd) {
 	cmds = make(map[string]*Cmd)
-	if j.Pause {
+	if !j.Enable {
 		return
 	}
 
-	for _, r := range j.Rules {
+	for _, r := range j.Timers {
 		cmd := &Cmd{
-			Job:     j,
-			JobRule: r,
+			Job:   j,
+			Timer: r,
+			Nodes: r.Nodes,
 		}
 		cmds[cmd.GetID()] = cmd
 	}
@@ -103,12 +95,16 @@ func GetIDFromKey(key string) string {
 	return key[index+1:]
 }
 
-func (j *Job) Run() error {
+func (j *Job) Run(taskOptions ...TaskOption) error {
 	var (
-		cmd    *exec.Cmd
-		ctx    context.Context
-		cancel context.CancelFunc
+		cmd           *exec.Cmd
+		ctx           context.Context
+		cancel        context.CancelFunc
+		consoleLogBuf bytes.Buffer
 	)
+
+	task := NewTask(j, taskOptions...)
+	_ = task.SetStatus(CronTaskStatusProcessing, "")
 
 	if j.Timeout > 0 {
 		ctx, cancel = context.WithTimeout(context.Background(), time.Duration(j.Timeout)*time.Second)
@@ -117,18 +113,37 @@ func (j *Job) Run() error {
 		ctx, cancel = context.WithCancel(context.Background())
 		defer cancel()
 	}
-	j.logger.Infof("command is : %s", j.Command)
-	cmd = exec.CommandContext(ctx, "/bin/bash", "-c", j.Command)
 
-	sysProcAttr := &syscall.SysProcAttr{
-		Setpgid: true,
+	// check if script exists
+	scriptFileState, err := os.Stat(j.Script)
+	if err != nil {
+		j.logger.Error("read script file failed", xlog.String("err", err.Error()))
+
+		consoleLogBuf.WriteString("read script file failed: " + err.Error())
+		_ = task.SetStatus(CronTaskStatusFailed, consoleLogBuf.String())
+
+		return err
+	} else if scriptFileState.IsDir() {
+		j.logger.Error("script path is a dir", xlog.String("script", j.Script))
+
+		consoleLogBuf.WriteString("script path is a dir, not a executable file")
+		_ = task.SetStatus(CronTaskStatusFailed, consoleLogBuf.String())
+
+		return fmt.Errorf("script is a dir, not a executable file. jobId[%s] script[%s]", j.ID, j.Script)
 	}
+
+	j.logger.Infof("command is : %s", j.Script)
+	cmd = exec.CommandContext(ctx, j.Script)
+
+	sysProcAttr := makeCmdAttr()
 	cmd.SysProcAttr = sysProcAttr
-	var b bytes.Buffer
-	cmd.Stdout = &b
-	cmd.Stderr = &b
+	cmd.Stdout = &consoleLogBuf
+	cmd.Stderr = &consoleLogBuf
 	if err := cmd.Start(); err != nil {
-		jobExecLogger.Info(b.String())
+		j.logger.Info(consoleLogBuf.String())
+
+		consoleLogBuf.WriteString(err.Error())
+		_ = task.SetStatus(CronTaskStatusFailed, consoleLogBuf.String())
 		return err
 	}
 
@@ -136,20 +151,34 @@ func (j *Job) Run() error {
 		ID:     strconv.Itoa(cmd.Process.Pid),
 		JobID:  j.ID,
 		NodeID: j.runOn,
+		TaskID: task.TaskID,
 		ProcessVal: ProcessVal{
 			Time: time.Now(),
 		},
 	}
 	proc.Start(j)
-	defer proc.Stop(j)
+	defer func() {
+		go func() {
+			time.Sleep(3 * time.Second)
+			proc.Stop(j)
+		}()
+	}()
 
 	if err := cmd.Wait(); err != nil {
-		jobExecLogger.Error(fmt.Sprintf("%s\n%s", b.String(), err.Error()))
-		j.logger.Error(b.String())
+		j.logger.Error(consoleLogBuf.String())
+		consoleLogBuf.WriteString(err.Error())
+
+		if ctx.Err() == context.DeadlineExceeded {
+			_ = task.SetStatus(CronTaskStatusTimeout, consoleLogBuf.String())
+		} else {
+			_ = task.SetStatus(CronTaskStatusFailed, consoleLogBuf.String())
+		}
+
 		return err
 	}
 
-	jobExecLogger.Info(b.String())
+	j.logger.Info(consoleLogBuf.String())
+	_ = task.SetStatus(CronTaskStatusSuccess, consoleLogBuf.String())
 
 	return nil
 }
@@ -167,7 +196,7 @@ func (j *Job) RunWithRecovery() {
 }
 
 func (j *Job) ValidRules() error {
-	for _, r := range j.Rules {
+	for _, r := range j.Timers {
 		if err := r.Valid(); err != nil {
 			return err
 		}
@@ -175,27 +204,28 @@ func (j *Job) ValidRules() error {
 	return nil
 }
 
-type JobRule struct {
-	ID    string `json:"id"`
-	Timer string `json:"timer"`
+type Timer struct {
+	ID    string   `json:"id"`
+	Cron  string   `json:"timer"`
+	Nodes []string `json:"nodes"`
 
 	Schedule Schedule `json:"-"`
 }
 
 // 验证 timer 字段
-func (rule *JobRule) Valid() error {
+func (rule *Timer) Valid() error {
 	// 注意 interface nil 的比较
 	if rule.Schedule != nil {
 		return nil
 	}
 
-	if len(rule.Timer) == 0 {
+	if len(rule.Cron) == 0 {
 		return errors.New("invalid job rule, empty timer.")
 	}
 
-	sch, err := myParser.Parse(rule.Timer)
+	sch, err := myParser.Parse(rule.Cron)
 	if err != nil {
-		return fmt.Errorf("invalid JobRule[%s], parse err: %s", rule.Timer, err.Error())
+		return fmt.Errorf("invalid Timer[%s], parse err: %s", rule.Cron, err.Error())
 	}
 
 	rule.Schedule = sch
@@ -221,28 +251,22 @@ func GetCurrentDirectory() string {
 	return strings.Replace(dir, "\\", "/", -1) //将\替换成/
 }
 
-func (j *Job) Info(msg string) {
-	jobExecLogger.Info(msg)
-}
-
-func (j *Job) Error(msg string) {
-	jobExecLogger.Error(msg)
-}
-
 type Cmd struct {
+	Nodes []string
+
 	*Job
-	*JobRule
+	*Timer
 	schEntryID EntryID
 }
 
 func (c *Cmd) GetID() string {
-	return c.Job.ID + c.JobRule.ID
+	return c.Job.ID + "-" + c.Timer.ID
 }
 
 func (c *Cmd) Run() error {
 
-	if c.Job.JobType != JobTypeNormal {
-		mutex, err := etcd.NewMutex(c.Client.Client, LockKeyPrefix, concurrency.WithTTL(5))
+	if c.Job.JobType == TypeAlone {
+		mutex, err := etcd.NewMutex(c.Client.Client, LockKeyPrefix+c.Job.ID, concurrency.WithTTL(5))
 		if err != nil {
 			c.logger.Info("job get lock error : ", xlog.FieldErr(err))
 			return err
@@ -255,7 +279,7 @@ func (c *Cmd) Run() error {
 		defer mutex.Unlock()
 	}
 
-	if c.Job.Retry <= 0 {
+	if c.Job.RetryCount <= 0 {
 		err := c.Job.Run()
 		if err != nil {
 			c.logger.Info("job run failed : ", xlog.FieldErr(err))
@@ -263,14 +287,13 @@ func (c *Cmd) Run() error {
 		return err
 	}
 
-	for i := 0; i <= c.Job.Retry; i++ {
+	for i := 0; i <= c.Job.RetryCount; i++ {
 		if err := c.Job.Run(); err != nil {
 			c.logger.Info("job run failed : ", xlog.FieldErr(err))
-			return err
 		}
 
-		if c.Job.Interval > 0 {
-			time.Sleep(time.Duration(c.Job.Interval) * time.Second)
+		if c.Job.RetryInterval > 0 {
+			time.Sleep(time.Duration(c.Job.RetryInterval) * time.Second)
 		}
 	}
 

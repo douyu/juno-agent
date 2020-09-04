@@ -15,10 +15,11 @@ var (
 )
 
 const (
-	JobsKeyPrefix = "/worker/cmd/"  // cronsun task路径
-	OnceKeyPrefix = "/worker/once/" // 马上执行任务路径
-	LockKeyPrefix = "/worker/lock/" // job lock 路径
-	ProcKeyPrefix = "/worker/proc/" // 正在运行的Process
+	JobsKeyPrefix   = "/juno/cronjob/job/"    // job prefix
+	OnceKeyPrefix   = "/juno/cronjob/once/"   // job that run immediately
+	LockKeyPrefix   = "/juno/cronjob/lock/"   // job lock (only for single-node mode job)
+	ProcKeyPrefix   = "/juno/cronjob/proc/"   // running process
+	ResultKeyPrefix = "/juno/cronjob/result/" // task result (logs and status)
 )
 
 type Config struct {
@@ -49,6 +50,7 @@ func StdConfig(key string) *Config {
 		panic(err)
 	}
 
+	config.logger = xlog.StdConfig("cronjob").Build()
 	return config
 }
 

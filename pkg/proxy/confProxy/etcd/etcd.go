@@ -60,10 +60,10 @@ type configNode struct {
 }
 
 // NewETCDDataSource ...
-func NewETCDDataSource(prefix string, etcdConfig ConfDataSourceEtcd) *DataSource {
+func NewETCDDataSource(prefix string) *DataSource {
 	dataSource := &DataSource{
-		etcdClient:       etcdv3.RawConfig("plugin.confProxy.etcd").Build(),
-		etcdClientReport: etcdv3.RawConfig("plugin.confProxy.etcd").Build(),
+		etcdClient:       etcdv3.StdConfig("default").Build(),
+		etcdClientReport: etcdv3.StdConfig("default").Build(),
 		prefix:           prefix,
 	}
 	xgo.Go(dataSource.watch)

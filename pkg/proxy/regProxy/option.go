@@ -16,20 +16,15 @@ package regProxy
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/douyu/juno-agent/pkg/proxy/regProxy/etcd"
 	"github.com/douyu/jupiter/pkg/conf"
 	"github.com/douyu/jupiter/pkg/flag"
-	"github.com/douyu/jupiter/pkg/util/xtime"
 	"github.com/douyu/jupiter/pkg/xlog"
 )
 
 // Config regConfig
 type Config struct {
-	EndPoints  []string `json:"endpoints"`
-	Timeout    time.Duration
-	Secure     bool
 	Enable     bool // Whether to open the open plug-in
 	Prometheus etcd.PluginRegProxyPrometheus
 }
@@ -43,6 +38,7 @@ func StdConfig(key string) *Config {
 		xlog.Error("confProxy", xlog.String("parse config err", err.Error()))
 		panic(err)
 	}
+
 	flagConfig := flag.Bool("regProxy")
 	config.Enable = flagConfig || config.Enable
 	return &config
@@ -51,10 +47,7 @@ func StdConfig(key string) *Config {
 // DefaultConfig return default config
 func DefaultConfig() Config {
 	return Config{
-		EndPoints: []string{"127.0.0.1:2379"},
-		Timeout:   xtime.Duration("1s"),
-		Secure:    false,
-		Enable:    false,
+		Enable: false,
 		Prometheus: etcd.PluginRegProxyPrometheus{
 			Enable: false,
 			Path:   "/home/www/server/prometheus/conf",

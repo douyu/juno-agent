@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -13,14 +14,17 @@ import (
 )
 
 // 当前执行中的任务信息
-// key: /{etcd_prefix}/node/jobId/pid
+// key: /{etcd_prefix}/jobId/taskId/node/pid
 // value: 开始执行时间
 // key 会自动过期，防止进程意外退出后没有清除相关 key，过期时间可配置
 type Process struct {
+	task *Task
+
 	// parse from key path
 	ID     string `json:"id"` // pid
 	JobID  string `json:"jobId"`
 	NodeID string `json:"nodeId"`
+	TaskID uint64 `json:"task_id"`
 	// parse from value
 	ProcessVal
 
@@ -41,16 +45,20 @@ func GetProcFromKey(key string) (proc *Process, err error) {
 		return
 	}
 
+	taskId, _ := strconv.ParseUint(ss[sslen-3], 10, 64)
 	proc = &Process{
 		ID:     ss[sslen-1],
-		JobID:  ss[sslen-2],
-		NodeID: ss[sslen-3],
+		NodeID: ss[sslen-2],
+		TaskID: taskId,
+		JobID:  ss[sslen-4],
 	}
 	return
 }
 
+//key: /{etcd_prefix}/jobId/taskId/node/pid
 func (p *Process) Key() string {
-	return ProcKeyPrefix + p.NodeID + "/" + p.JobID + "/" + p.ID
+	taskId := strconv.FormatUint(p.TaskID, 10)
+	return ProcKeyPrefix + p.JobID + "/" + taskId + "/" + p.NodeID + "/" + p.ID
 }
 
 func (p *Process) Val() (string, error) {
