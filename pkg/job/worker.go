@@ -21,17 +21,17 @@ import (
 	"strings"
 
 	"github.com/coreos/etcd/clientv3"
+	"github.com/coreos/etcd/clientv3/concurrency"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/douyu/juno-agent/pkg/job/etcd"
 	"github.com/douyu/juno-agent/util"
 	"github.com/douyu/jupiter/pkg/client/etcdv3"
-	"github.com/douyu/jupiter/pkg/util/xgo"
 	"github.com/douyu/jupiter/pkg/xlog"
 	"github.com/sony/sonyflake"
 )
 
 // Node 执行 cron 命令服务的结构体
-type worker struct {
+type Worker struct {
 	*Config
 	*etcdv3.Client
 	*Cron
@@ -47,8 +47,8 @@ type worker struct {
 	taskIdGen *sonyflake.Sonyflake
 }
 
-func NewWorker(conf *Config) (w *worker) {
-	w = &worker{
+func NewWorker(conf *Config) (w *Worker) {
+	w = &Worker{
 		Config:         conf,
 		ID:             conf.HostName,
 		Client:         etcdv3.StdConfig("default").Build(),
@@ -66,19 +66,43 @@ func NewWorker(conf *Config) (w *worker) {
 	return
 }
 
-func (w *worker) Run() error {
-	w.logger.Info("worker run...")
+func (w *Worker) Run() error {
+	w.logger.Info("Worker run...")
 
 	w.Cron.Run()
-	go w.watchLocks()
-	go w.watchJobs()
-	go w.watchOnce()
-	go w.watchExecutingProc()
+
+	lockWCh := w.Client.Watch(context.Background(), LockKeyPrefix, clientv3.WithPrefix())
+	onceWch := w.Client.Watch(context.Background(), OnceKeyPrefix+w.HostName, clientv3.WithPrefix())
+	procWch := w.Client.Watch(context.Background(), ProcKeyPrefix, clientv3.WithPrefix())
+	jobWch, err := etcd.WatchPrefix(w.Client, context.Background(), JobsKeyPrefix)
+	if err != nil {
+		panic(err)
+	}
+
+	// load prev jobs
+	w.loadJobs(jobWch.IncipientKeyValues())
+
+	for {
+		select {
+		case ev := <-lockWCh:
+			w.handleLockEv(ev)
+
+		case ev := <-onceWch:
+			w.handleOnceEv(ev)
+
+		case ev := <-procWch:
+			w.handleProcEv(ev)
+
+		case ev := <-jobWch.C():
+			w.handleJobEv(ev)
+
+		}
+	}
 
 	return nil
 }
 
-func (w *worker) loadJobs(keyValue []*mvccpb.KeyValue) {
+func (w *Worker) loadJobs(keyValue []*mvccpb.KeyValue) {
 	w.jobs = make(map[string]*Job)
 	if len(keyValue) == 0 {
 		return
@@ -100,129 +124,14 @@ func (w *worker) loadJobs(keyValue []*mvccpb.KeyValue) {
 	return
 }
 
-// watchJobs watch jobs
-func (w *worker) watchJobs() {
-	ctx, cancelFunc := NewEtcdTimeoutContext(w)
-	defer cancelFunc()
-
-	watch, err := etcd.WatchPrefix(w.Client, ctx, JobsKeyPrefix)
-	if err != nil {
-		panic(err)
-	}
-
-	// 将之前job保存下来
-	w.loadJobs(watch.IncipientKeyValues())
-
-	xgo.Go(func() {
-		for event := range watch.C() {
-			switch {
-			case event.IsCreate():
-				w.logger.Info("is create..")
-				job, err := w.GetJobContentFromKv(event.Kv.Key, event.Kv.Value)
-				if err != nil {
-					continue
-				}
-
-				job.runOn = w.ID
-				w.addJob(job)
-			case event.IsModify():
-				w.logger.Info("is IsModify..")
-				job, err := w.GetJobContentFromKv(event.Kv.Key, event.Kv.Value)
-				if err != nil {
-					continue
-				}
-
-				job.runOn = w.ID
-				w.modJob(job)
-			case event.Type == clientv3.EventTypeDelete:
-				w.logger.Info("is EventTypeDelete..")
-				w.delJob(GetIDFromKey(string(event.Kv.Key)))
-			default:
-				w.logger.Warnf("unknown event type[%v] from job[%s]", event.Type, string(event.Kv.Key))
-			}
-		}
-	})
-}
-
-// 立即执行一次任务
-func (w *worker) watchOnce() {
-	ctx, cancelFunc := NewEtcdTimeoutContext(w)
-	defer cancelFunc()
-
-	watch, err := etcd.WatchPrefix(w.Client, ctx, OnceKeyPrefix+w.HostName)
-	if err != nil {
-		panic(err)
-	}
-
-	xgo.Go(func() {
-		for event := range watch.C() {
-			switch {
-			case event.IsCreate(), event.IsModify():
-				w.logger.Info("once task...")
-
-				job, err := w.GetOnceJobFromKv(event.Kv.Key, event.Kv.Value)
-				if err != nil {
-					xlog.Error("get job from kv failed", xlog.String("err", err.Error()))
-					continue
-				}
-
-				job.worker = w
-				go job.RunWithRecovery(WithTaskID(job.TaskID))
-			}
-		}
-	})
-}
-
-// watch任务执行列表，执行强杀操作
-func (w *worker) watchExecutingProc() {
-	ctx, cancelFunc := NewEtcdTimeoutContext(w)
-	defer cancelFunc()
-
-	watch, err := etcd.WatchPrefix(w.Client, ctx, ProcKeyPrefix)
-	if err != nil {
-		panic(err)
-	}
-
-	xgo.Go(func() {
-		for event := range watch.C() {
-			switch {
-			case event.IsModify():
-				w.logger.Info("exec process task...")
-
-				key := string(event.Kv.Key)
-				process, err := GetProcFromKey(key)
-				if err != nil {
-					w.logger.Warnf("err: %s, kv: %s", err.Error(), event.Kv.String())
-					continue
-				}
-
-				if process.NodeID != w.ID {
-					continue
-				}
-
-				val := string(event.Kv.Value)
-				pv := &ProcessVal{}
-				err = json.Unmarshal([]byte(val), pv)
-				if err != nil {
-					continue
-				}
-				process.ProcessVal = *pv
-				if process.Killed {
-					w.KillExecutingProc(process)
-				}
-			}
-		}
-	})
-}
-
-func (w *worker) delJob(id string) {
+func (w *Worker) delJob(id string) {
 	job, ok := w.jobs[id]
 	// 之前此任务没有在当前结点执行
 	if !ok {
 		return
 	}
 
-	xlog.Error("worker.delJob:delete a job", xlog.String("jobId", id))
+	xlog.Error("Worker.delJob:delete a job", xlog.String("jobId", id))
 
 	delete(w.jobs, id)
 	job.Unlock()
@@ -238,15 +147,14 @@ func (w *worker) delJob(id string) {
 	return
 }
 
-func (w *worker) modJob(job *Job) {
+func (w *Worker) modJob(job *Job) {
 	oJob, ok := w.jobs[job.ID]
 	if !ok {
 		w.addJob(job)
 		return
 	}
 
-	job.worker = w
-	job.mutex = oJob.mutex
+	job.Worker = w
 	job.locked = oJob.locked
 
 	if util.InStringArray(job.Nodes, w.HostName) < 0 {
@@ -281,12 +189,12 @@ func (w *worker) modJob(job *Job) {
 	}
 }
 
-func (w *worker) addJob(job *Job) {
-	job.worker = w
+func (w *Worker) addJob(job *Job) {
+	job.Worker = w
 
 	if util.InStringArray(job.Nodes, w.HostName) < 0 {
 		// ignore
-		xlog.Info("worker.addJob: Nodes do not contain current node, skip it.", xlog.String("jobId", job.ID))
+		xlog.Info("Worker.addJob: Nodes do not contain current node, skip it.", xlog.String("jobId", job.ID))
 		return
 	}
 
@@ -298,7 +206,7 @@ func (w *worker) addJob(job *Job) {
 		}
 	}
 
-	xlog.Info("worker.addJob: add a job", xlog.String("jobId", job.ID), xlog.Any("job", job))
+	xlog.Info("Worker.addJob: add a job", xlog.String("jobId", job.ID), xlog.Any("job", job))
 
 	// 添加任务到当前节点
 	w.jobs[job.ID] = job
@@ -314,7 +222,7 @@ func (w *worker) addJob(job *Job) {
 	return
 }
 
-func (w *worker) delCmd(cmd *Cmd) {
+func (w *Worker) delCmd(cmd *Cmd) {
 	c, ok := w.cmds[cmd.GetID()]
 	if ok {
 		delete(w.cmds, cmd.GetID())
@@ -323,7 +231,7 @@ func (w *worker) delCmd(cmd *Cmd) {
 	w.logger.Infof("job[%s] rule[%s] timer[%s] has deleted", cmd.Job.ID, cmd.Timer.ID, cmd.Timer.Cron)
 }
 
-func (w *worker) modCmd(cmd *Cmd) {
+func (w *Worker) modCmd(cmd *Cmd) {
 	c, ok := w.cmds[cmd.GetID()]
 	if !ok {
 		w.addCmd(cmd)
@@ -345,7 +253,7 @@ func (w *worker) modCmd(cmd *Cmd) {
 	w.logger.Infof("job[%s]rule[%s] timer[%s] has updated", c.Job.ID, c.Timer.ID, c.Timer.Cron)
 }
 
-func (w *worker) addCmd(cmd *Cmd) {
+func (w *Worker) addCmd(cmd *Cmd) {
 	cmd.schEntryID = w.Cron.Schedule(cmd.Timer.Schedule, cmd)
 	w.cmds[cmd.GetID()] = cmd
 
@@ -354,7 +262,8 @@ func (w *worker) addCmd(cmd *Cmd) {
 	return
 }
 
-func (w *worker) GetJobContentFromKv(key []byte, value []byte) (*Job, error) {
+func (w *Worker) GetJobContentFromKv(key []byte, value []byte) (*Job, error) {
+	var err error
 	job := &Job{}
 
 	if err := json.Unmarshal(value, job); err != nil {
@@ -366,10 +275,15 @@ func (w *worker) GetJobContentFromKv(key []byte, value []byte) (*Job, error) {
 		return nil, err
 	}
 
+	job.mutex, err = w.Client.NewMutex(LockKeyPrefix+job.ID, concurrency.WithTTL(30))
+	if err != nil {
+		return nil, err
+	}
+
 	return job, nil
 }
 
-func (w *worker) GetOnceJobFromKv(key []byte, value []byte) (*OnceJob, error) {
+func (w *Worker) GetOnceJobFromKv(key []byte, value []byte) (*OnceJob, error) {
 	job := &OnceJob{}
 
 	if err := json.Unmarshal(value, job); err != nil {
@@ -384,7 +298,7 @@ func (w *worker) GetOnceJobFromKv(key []byte, value []byte) (*OnceJob, error) {
 	return job, nil
 }
 
-func (w *worker) KillExecutingProc(process *Process) {
+func (w *Worker) KillExecutingProc(process *Process) {
 	pid, _ := strconv.Atoi(process.ID)
 	if err := killProcess(pid); err != nil {
 		w.logger.Warnf("process:[%d] force kill failed, error:[%s]", pid, err)
@@ -392,38 +306,125 @@ func (w *worker) KillExecutingProc(process *Process) {
 	}
 }
 
-func (w *worker) watchLocks() {
-	wch := w.Client.Watch(context.Background(), LockKeyPrefix, clientv3.WithPrefix())
+func (w *Worker) handleLockEv(ev clientv3.WatchResponse) {
+	for _, ev := range ev.Events {
+		switch {
+		case ev.Type == clientv3.EventTypeDelete:
+			// watch deleted job and try to lock that job
+			jobId := getJobIDFromLockKey(string(ev.Kv.Key))
 
-	for ev := range wch {
-		for _, ev := range ev.Events {
-			switch {
-			case ev.Type == clientv3.EventTypeDelete:
-				// watch deleted job and try to lock that job
-				jobId := getJobIDFromLockKey(string(ev.Kv.Key))
-				w.tryGetJob(jobId)
+			resp, err := w.Client.Get(context.Background(), LockKeyPrefix+jobId+"/", clientv3.WithPrefix())
+			if err != nil {
+				return
+			}
+			if resp.Count > 0 {
+				return
+			}
+
+			resp, err = w.Client.Get(context.Background(), JobsKeyPrefix+jobId)
+			if err != nil {
+				return
+			}
+			if len(resp.Kvs) == 0 {
+				return
+			}
+
+			jobKv := resp.Kvs[0]
+			job, err := w.GetJobContentFromKv(jobKv.Key, jobKv.Value)
+			if err != nil {
+				return
+			}
+
+			job.runOn = w.ID
+			if _, ok := w.jobs[jobId]; !ok { // job not exists
+				w.addJob(job)
 			}
 		}
 	}
 }
 
-func (w *worker) tryGetJob(jobId string) {
-	resp, err := w.Client.Get(context.Background(), JobsKeyPrefix+jobId)
-	if err != nil {
-		return
-	}
-	if len(resp.Kvs) == 0 {
-		return
-	}
+func (w *Worker) handleOnceEv(ev clientv3.WatchResponse) {
+	for _, event := range ev.Events {
+		switch {
+		case event.IsCreate(), event.IsModify():
+			w.logger.Info("once task...")
 
-	jobKv := resp.Kvs[0]
-	job, err := w.GetJobContentFromKv(jobKv.Key, jobKv.Value)
-	if err != nil {
-		return
-	}
+			job, err := w.GetOnceJobFromKv(event.Kv.Key, event.Kv.Value)
+			if err != nil {
+				xlog.Error("get job from kv failed", xlog.String("err", err.Error()))
+				continue
+			}
 
-	if _, ok := w.jobs[job.ID]; !ok {
+			job.Worker = w
+			go job.RunWithRecovery(WithTaskID(job.TaskID))
+		}
+	}
+}
+
+func (w *Worker) handleProcEv(ev clientv3.WatchResponse) {
+	for _, event := range ev.Events {
+		switch {
+		case event.IsModify():
+			w.logger.Info("exec process task...")
+
+			key := string(event.Kv.Key)
+			process, err := GetProcFromKey(key)
+			if err != nil {
+				w.logger.Warnf("err: %s, kv: %s", err.Error(), event.Kv.String())
+				continue
+			}
+
+			if process.NodeID != w.ID {
+				continue
+			}
+
+			val := string(event.Kv.Value)
+			pv := &ProcessVal{}
+			err = json.Unmarshal([]byte(val), pv)
+			if err != nil {
+				continue
+			}
+			process.ProcessVal = *pv
+			if process.Killed {
+				w.KillExecutingProc(process)
+			}
+		}
+	}
+}
+
+func (w *Worker) handleJobEv(event *clientv3.Event) {
+	switch {
+	case event.IsCreate():
+		w.logger.Info("is create..")
+		job, err := w.GetJobContentFromKv(event.Kv.Key, event.Kv.Value)
+		if err != nil {
+			return
+		}
+
+		job.runOn = w.ID
 		w.addJob(job)
+	case event.IsModify():
+		w.logger.Info("is IsModify..")
+		job, err := w.GetJobContentFromKv(event.Kv.Key, event.Kv.Value)
+		if err != nil {
+			return
+		}
+
+		job.runOn = w.ID
+		w.modJob(job)
+	case event.Type == clientv3.EventTypeDelete:
+		w.logger.Info("is EventTypeDelete..")
+		w.delJob(GetIDFromKey(string(event.Kv.Key)))
+	default:
+		w.logger.Warnf("unknown event type[%v] from job[%s]", event.Type, string(event.Kv.Key))
+	}
+}
+
+func (w *Worker) CleanJobs() {
+	w.logger.Info("Worker: start clean jobs")
+
+	for _, job := range w.jobs {
+		w.delJob(job.ID)
 	}
 }
 

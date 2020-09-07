@@ -13,7 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/coreos/etcd/clientv3/concurrency"
 	"github.com/douyu/jupiter/pkg/client/etcdv3"
 	"github.com/douyu/jupiter/pkg/xlog"
 )
@@ -59,14 +58,14 @@ type Job struct {
 	hostname string
 
 	// 用于访问etcd
-	*worker `json:"-"`
+	*Worker `json:"-"`
 
 	mutex  *etcdv3.Mutex
 	locked bool
 }
 
 // NewEtcdTimeoutContext return a new etcdTimeoutContext
-func NewEtcdTimeoutContext(w *worker) (context.Context, context.CancelFunc) {
+func NewEtcdTimeoutContext(w *Worker) (context.Context, context.CancelFunc) {
 	return context.WithTimeout(context.Background(), time.Duration(w.ReqTimeout)*time.Second)
 }
 
@@ -208,27 +207,19 @@ func (j *Job) ValidRules() error {
 
 func (j *Job) Lock() error {
 	var err error
-	j.mutex, err = j.Client.NewMutex(LockKeyPrefix+j.ID, concurrency.WithTTL(10))
+	err = j.mutex.Lock(time.Second)
 	if err != nil {
 		return err
 	}
-
-	err = j.mutex.Lock(3 * time.Second)
-	if err != nil {
-		return err
-	}
-
 	j.locked = true
 
 	return nil
 }
 
 func (j *Job) Unlock() {
-	if j.mutex != nil {
-		err := j.mutex.Unlock()
-		if err != nil {
-			xlog.Error("unlock failed", xlog.FieldErr(err))
-		}
+	err := j.mutex.Unlock()
+	if err != nil {
+		xlog.Error("unlock failed", xlog.FieldErr(err))
 	}
 }
 
