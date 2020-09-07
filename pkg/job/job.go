@@ -16,7 +16,6 @@ import (
 	"github.com/coreos/etcd/clientv3/concurrency"
 	"github.com/douyu/jupiter/pkg/client/etcdv3"
 	"github.com/douyu/jupiter/pkg/xlog"
-	"go.uber.org/zap"
 )
 
 func init() {
@@ -258,17 +257,6 @@ func (rule *Timer) Valid() error {
 
 	rule.Schedule = sch
 	return nil
-}
-
-func NewLogger() (*zap.Logger, error) {
-	cfg := zap.NewProductionConfig()
-	logFile := GetCurrentDirectory() + "/log"
-	os.MkdirAll(logFile, os.ModePerm)
-
-	cfg.OutputPaths = []string{
-		logFile + "/job.log",
-	}
-	return cfg.Build()
 }
 
 func GetCurrentDirectory() string {
