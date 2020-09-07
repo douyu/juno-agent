@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/coreos/etcd/clientv3/concurrency"
-	"github.com/douyu/juno-agent/pkg/job/etcd"
 	"github.com/douyu/jupiter/pkg/client/etcdv3"
 	"github.com/douyu/jupiter/pkg/xlog"
 	"go.uber.org/zap"
@@ -294,20 +293,6 @@ func (c *Cmd) GetID() string {
 }
 
 func (c *Cmd) Run() error {
-	if c.Job.JobType == TypeAlone {
-		mutex, err := etcd.NewMutex(c.Client.Client, LockKeyPrefix+c.Job.ID, concurrency.WithTTL(5))
-		if err != nil {
-			c.logger.Info("job get lock error : ", xlog.FieldErr(err))
-			return err
-		}
-		err = mutex.Lock(time.Duration(c.ReqTimeout) * time.Second)
-		if err != nil {
-			c.logger.Info("job lock is failed : ", xlog.FieldErr(err))
-			return err
-		}
-		defer mutex.Unlock()
-	}
-
 	if c.Job.RetryCount <= 0 {
 		err := c.Job.Run()
 		if err != nil {

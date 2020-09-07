@@ -79,9 +79,8 @@ func (w *worker) Run() error {
 }
 
 func (w *worker) loadJobs(keyValue []*mvccpb.KeyValue) {
-	count := len(keyValue)
-	jobs := make(map[string]*Job, count)
-	if count == 0 {
+	w.jobs = make(map[string]*Job)
+	if len(keyValue) == 0 {
 		return
 	}
 
@@ -92,18 +91,10 @@ func (w *worker) loadJobs(keyValue []*mvccpb.KeyValue) {
 			continue
 		}
 
-		jobs[job.ID] = job
-	}
-
-	w.jobs = jobs
-	w.logger.Infof("job len : %d", len(w.jobs))
-	if len(jobs) == 0 {
-		return
-	}
-
-	for _, job := range jobs {
 		job.runOn = w.ID
-		w.addJob(job)
+		if _, ok := w.jobs[job.ID]; !ok {
+			w.addJob(job)
+		}
 	}
 
 	return
@@ -253,6 +244,9 @@ func (w *worker) modJob(job *Job) {
 	}
 
 	job.worker = w
+	job.mutex = oJob.mutex
+	job.locked = oJob.locked
+
 	prevCmds := oJob.Cmds()
 	*oJob = *job
 	cmds := oJob.Cmds()
@@ -409,7 +403,9 @@ func (w *worker) tryGetJob(jobId string) {
 		return
 	}
 
-	w.addJob(job)
+	if _, ok := w.jobs[job.ID]; !ok {
+		w.addJob(job)
+	}
 }
 
 func getJobIDFromLockKey(key string) (jobId string) {
