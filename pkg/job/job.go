@@ -59,9 +59,8 @@ type Job struct {
 	runOn    string // worker id
 	hostname string
 
-	// 用于访问etcd
+	// 用于访问.
 	*worker `json:"-"`
-
 	mutex  *etcdv3.Mutex
 	locked bool
 }
