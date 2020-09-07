@@ -247,6 +247,18 @@ func (w *worker) modJob(job *Job) {
 	job.mutex = oJob.mutex
 	job.locked = oJob.locked
 
+	if job.JobType != oJob.JobType { // if job-type modified
+		if job.JobType == TypeNormal {
+			if job.mutex != nil && job.locked {
+				job.mutex.Unlock()
+			}
+		} else if job.JobType == TypeAlone {
+			// remove job
+			delete(w.jobs, job.ID)
+			w.addJob(job)
+		}
+	}
+
 	prevCmds := oJob.Cmds()
 	*oJob = *job
 	cmds := oJob.Cmds()
