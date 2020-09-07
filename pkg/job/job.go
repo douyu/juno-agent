@@ -40,6 +40,7 @@ type Job struct {
 	Timeout int64    `json:"timeout"` // 单位时间秒，任务执行时间超时设置，大于 0 时有效
 	Env     string   `json:"env"`
 	Zone    string   `json:"zone"`
+	Nodes   []string `json:"nodes"`
 
 	// 执行任务失败重试次数
 	// 默认为 0，不重试
@@ -80,7 +81,6 @@ func (j *Job) Cmds() (cmds map[string]*Cmd) {
 		cmd := &Cmd{
 			Job:   j,
 			Timer: r,
-			Nodes: r.Nodes,
 		}
 		cmds[cmd.GetID()] = cmd
 	}
@@ -234,9 +234,8 @@ func (j *Job) Unlock() {
 }
 
 type Timer struct {
-	ID    string   `json:"id"`
-	Cron  string   `json:"timer"`
-	Nodes []string `json:"nodes"`
+	ID   string `json:"id"`
+	Cron string `json:"timer"`
 
 	Schedule Schedule `json:"-"`
 }
@@ -281,8 +280,6 @@ func GetCurrentDirectory() string {
 }
 
 type Cmd struct {
-	Nodes []string
-
 	*Job
 	*Timer
 	schEntryID EntryID
@@ -303,7 +300,7 @@ func (c *Cmd) Run() error {
 
 	for i := 0; i <= c.Job.RetryCount; i++ {
 		if err := c.Job.Run(); err != nil {
-			c.logger.Info("job run failed : ", xlog.FieldErr(err))
+			c.logger.Info("job run failed", xlog.FieldErr(err))
 		}
 
 		if c.Job.RetryInterval > 0 {
