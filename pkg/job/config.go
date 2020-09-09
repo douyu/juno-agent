@@ -38,7 +38,7 @@ type Config struct {
 // DefaultConfig ...
 func DefaultConfig() *Config {
 	return &Config{
-		ReqTimeout: 5,
+		ReqTimeout: 3,
 	}
 }
 
