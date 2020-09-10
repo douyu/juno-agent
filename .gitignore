@@ -11,4 +11,5 @@ vendor/
 default
 default.etcd/
 release
-configs/*
+configs/
+logs/
