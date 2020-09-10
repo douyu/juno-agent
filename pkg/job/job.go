@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/coreos/etcd/clientv3/concurrency"
-	"github.com/douyu/juno-agent/pkg/job/etcd"
 	"github.com/douyu/jupiter/pkg/client/etcdv3"
 	"github.com/douyu/jupiter/pkg/xlog"
 	"go.uber.org/zap"
