@@ -79,9 +79,8 @@ func (w *worker) Run() error {
 }
 
 func (w *worker) loadJobs(keyValue []*mvccpb.KeyValue) {
-	count := len(keyValue)
-	jobs := make(map[string]*Job, count)
-	if count == 0 {
+	w.jobs = make(map[string]*Job)
+	if len(keyValue) == 0 {
 		return
 	}
 
@@ -92,18 +91,10 @@ func (w *worker) loadJobs(keyValue []*mvccpb.KeyValue) {
 			continue
 		}
 
-		jobs[job.ID] = job
-	}
-
-	w.jobs = jobs
-	w.logger.Infof("job len : %d", len(w.jobs))
-	if len(jobs) == 0 {
-		return
-	}
-
-	for _, job := range jobs {
 		job.runOn = w.ID
-		w.addJob(job)
+		if _, ok := w.jobs[job.ID]; !ok {
+			w.addJob(job)
+		}
 	}
 
 	return
@@ -231,6 +222,8 @@ func (w *worker) delJob(id string) {
 		return
 	}
 
+	xlog.Error("worker.delJob:delete a job", xlog.String("jobId", id))
+
 	delete(w.jobs, id)
 	job.Unlock()
 
@@ -253,16 +246,30 @@ func (w *worker) modJob(job *Job) {
 	}
 
 	job.worker = w
+	job.mutex = oJob.mutex
+	job.locked = oJob.locked
+
+	if util.InStringArray(job.Nodes, w.HostName) < 0 {
+		w.delJob(job.ID)
+		return
+	}
+
+	if job.JobType != oJob.JobType { // if job-type modified
+		if job.JobType == TypeNormal {
+			oJob.Unlock()
+		} else if job.JobType == TypeAlone {
+			w.delJob(job.ID)
+			w.addJob(job)
+			return
+		}
+	}
+
 	prevCmds := oJob.Cmds()
 	*oJob = *job
 	cmds := oJob.Cmds()
 
 	// 筛选出需要删除的任务
 	for id, cmd := range cmds {
-		if util.InStringArray(cmd.Nodes, w.HostName) < 0 {
-			continue
-		}
-
 		w.modCmd(cmd)
 		delete(prevCmds, id)
 	}
@@ -275,6 +282,12 @@ func (w *worker) modJob(job *Job) {
 func (w *worker) addJob(job *Job) {
 	job.worker = w
 
+	if util.InStringArray(job.Nodes, w.HostName) < 0 {
+		// ignore
+		xlog.Info("worker.addJob: Nodes do not contain current node, skip it.", xlog.String("jobId", job.ID))
+		return
+	}
+
 	if job.JobType == TypeAlone {
 		err := job.Lock()
 		if err != nil {
@@ -282,6 +295,8 @@ func (w *worker) addJob(job *Job) {
 			return
 		}
 	}
+
+	xlog.Info("worker.addJob: add a job", xlog.String("jobId", job.ID), xlog.Any("job", job))
 
 	// 添加任务到当前节点
 	w.jobs[job.ID] = job
@@ -292,10 +307,6 @@ func (w *worker) addJob(job *Job) {
 	}
 
 	for _, cmd := range cmds {
-		if util.InStringArray(cmd.Nodes, w.HostName) < 0 {
-			continue
-		}
-
 		w.addCmd(cmd)
 	}
 	return
@@ -409,7 +420,9 @@ func (w *worker) tryGetJob(jobId string) {
 		return
 	}
 
-	w.addJob(job)
+	if _, ok := w.jobs[job.ID]; !ok {
+		w.addJob(job)
+	}
 }
 
 func getJobIDFromLockKey(key string) (jobId string) {
