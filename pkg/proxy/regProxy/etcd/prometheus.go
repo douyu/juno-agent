@@ -45,11 +45,10 @@ func (d *DataSource) watchPrometheus(path string) {
 					filename := keyArr[3] + "_" + value
 					content := `
 - targets:
-
     - "` + value + `"
   labels:
     instance: ` + keyArr[4] + `
-    job: ` + filename
+    job: ` + keyArr[3]
 					_ = util.WriteFile(path+"/"+filename+".yml", content)
 				}
 			}
@@ -80,11 +79,10 @@ func (d *DataSource) PrometheusConfigScanner(path string) {
 
 		content := `
 - targets:
-
     - "` + value + `"
   labels:
     instance: ` + keyArr[4] + `
-    job: ` + filename
+    job: ` + keyArr[3]
 		_ = util.WriteFile(path+"/"+filename+".yml", content)
 	}
 	return

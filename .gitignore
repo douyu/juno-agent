@@ -13,3 +13,4 @@ default.etcd/
 release
 configs/
 logs/
+*.log
