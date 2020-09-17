@@ -17,15 +17,14 @@ package core
 import (
 	"context"
 	"fmt"
-	"github.com/douyu/juno-agent/pkg/job"
 	"sync"
 	"time"
 
-	"github.com/douyu/juno-agent/pkg/nginx"
-
 	"github.com/douyu/juno-agent/pkg/check"
+	"github.com/douyu/juno-agent/pkg/job"
 	"github.com/douyu/juno-agent/pkg/mbus"
 	"github.com/douyu/juno-agent/pkg/mbus/rocketmq"
+	"github.com/douyu/juno-agent/pkg/nginx"
 	"github.com/douyu/juno-agent/pkg/pmt/supervisor"
 	"github.com/douyu/juno-agent/pkg/pmt/systemd"
 	"github.com/douyu/juno-agent/pkg/process"
@@ -65,6 +64,12 @@ type Engine struct {
 // NewEngine new the engine
 func NewEngine() *Engine {
 	eng := &Engine{}
+	//eng.SetRegistry(
+	//	compound_registry.New(
+	//		etcdv3_registry.StdConfig("test").Build(),
+	//	),
+	//)
+
 	if err := eng.Startup(
 		eng.startLogRecord,
 		eng.startReportStatus, // start report agent status

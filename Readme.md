@@ -44,14 +44,5 @@ Juno-agent --config=Juno-agent.toml
 * HTTP模块
 * 依赖探活(提供HTTP接口，针对应用依赖的组件进行探活)
 
-## api
-* [api文档](https://github.com/douyu/juno-agent/tree/master/doc/api/api.md)
-
-
-## Contact
-
-- DingTalk: 
-    ![DingTalk](doc/dingtalk.png)
-- Wechat:
-    ![Wechat](doc/wechat.png)
-
+## Document
+* [说明文档](https://github.com/douyu/juno-agent/tree/master/doc/api/api.md)
