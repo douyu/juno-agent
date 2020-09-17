@@ -256,7 +256,9 @@ func (w *worker) modJob(job *Job) {
 
 	if job.JobType != oJob.JobType { // if job-type modified
 		if job.JobType == TypeNormal {
-			oJob.Unlock()
+			if job.mutex != nil && job.locked {
+				job.mutex.Unlock()
+			}
 		} else if job.JobType == TypeAlone {
 			w.delJob(job.ID)
 			w.addJob(job)
