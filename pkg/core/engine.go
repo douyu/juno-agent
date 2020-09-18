@@ -59,6 +59,7 @@ type Engine struct {
 	supervisorScanner *supervisor.Scanner
 	systemdScanner    *systemd.Scanner
 	nginxScanner      *nginx.ConfScanner
+	worker            *job.Worker
 }
 
 // NewEngine new the engine
@@ -90,6 +91,12 @@ func NewEngine() *Engine {
 	); err != nil {
 		xlog.Panic("new engine", xlog.Any("err", err))
 	}
+
+	err := eng.RegisterHooks(jupiter.StageAfterStop, eng.cleanJobs)
+	if err != nil {
+		xlog.Panicf("register hook failed. err=%s", err.Error())
+	}
+
 	return eng
 }
 
@@ -267,6 +274,7 @@ func (eng *Engine) startHealCheck() error {
 
 func (eng *Engine) startWorker() error {
 	worker := job.StdConfig("worker").Build()
+	eng.worker = worker
 	return worker.Run()
 }
 
@@ -371,4 +379,9 @@ func (eng *Engine) checkServiceNodes() {
 			xlog.Error("group wait", xlog.Any("err", err))
 		}
 	}
+}
+
+func (eng *Engine) cleanJobs() error {
+	eng.worker.CleanJobs()
+	return nil
 }

@@ -55,7 +55,7 @@ func StdConfig(key string) *Config {
 }
 
 // Build new a instance
-func (c *Config) Build() *worker {
+func (c *Config) Build() *Worker {
 	c.HostName = report.ReturnHostName()
 	c.AppIP = report.ReturnAppIp()
 
