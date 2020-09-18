@@ -12,5 +12,9 @@ default
 default.etcd/
 release
 configs/
+<<<<<<< HEAD
 logs/
 *.log
+=======
+logs/
+>>>>>>> a4be67c... fix: 将 cronjob 的 nodes 参数提到 job 下
