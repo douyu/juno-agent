@@ -66,14 +66,14 @@ func (wl *wrappedLogger) Error(err error, msg string, keysAndValues ...interface
 
 // Cron ...
 type Cron struct {
-	*worker
+	*Worker
 	*cron.Cron
 	entries map[string]EntryID
 }
 
-func newCron(config *worker) *Cron {
+func newCron(config *Worker) *Cron {
 	c := &Cron{
-		worker: config,
+		Worker: config,
 		Cron: cron.New(
 			cron.WithLogger(&wrappedLogger{config.logger}),
 			cron.WithChain(config.wrappers...),
@@ -91,7 +91,7 @@ func (c *Cron) Schedule(schedule Schedule, job NamedJob) EntryID {
 	}
 	innnerJob := &wrappedJob{
 		NamedJob: job,
-		logger:   c.worker.logger,
+		logger:   c.Worker.logger,
 	}
 
 	return c.Cron.Schedule(schedule, innnerJob)
@@ -99,7 +99,7 @@ func (c *Cron) Schedule(schedule Schedule, job NamedJob) EntryID {
 
 // AddJob ...
 func (c *Cron) AddJob(spec string, cmd NamedJob) (EntryID, error) {
-	schedule, err := c.worker.parser.Parse(spec)
+	schedule, err := c.Worker.parser.Parse(spec)
 	if err != nil {
 		return 0, err
 	}
@@ -118,7 +118,7 @@ func (c *Cron) Remove(id EntryID) {
 
 // Run ...
 func (c *Cron) Run() {
-	c.worker.logger.Info("run worker", xlog.Int("number of scheduled jobs", len(c.Cron.Entries())))
+	c.Worker.logger.Info("run Worker", xlog.Int("number of scheduled jobs", len(c.Cron.Entries())))
 	c.Cron.Start()
 }
 
@@ -170,7 +170,7 @@ func (wj wrappedJob) run() (err error) {
 		}
 		if err != nil {
 			fields = append(fields, xlog.String("err", err.Error()), xlog.Duration("cost", time.Since(beg)))
-			wj.logger.Error("worker", fields...)
+			wj.logger.Error("Worker", fields...)
 		}
 	}()
 

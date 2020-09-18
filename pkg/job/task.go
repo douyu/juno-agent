@@ -49,7 +49,7 @@ func NewTask(job *Job, ops ...TaskOption) *Task {
 		op(task)
 	}
 	if task.TaskID == 0 {
-		id, _ := job.worker.taskIdGen.NextID()
+		id, _ := job.Worker.taskIdGen.NextID()
 		task.TaskID = id
 	}
 
