@@ -38,6 +38,8 @@ github.com/apache/rocketmq-client-go v0.0.0-20191211114916-85ee94b43cef h1:O9vKN
 github.com/apache/rocketmq-client-go v0.0.0-20191211114916-85ee94b43cef/go.mod h1:u76Qs5/j7mpSrin0NBm7xFotMYm1sH1uP4mWyfBVqnc=
 github.com/apache/rocketmq-client-go/v2 v2.0.0-rc2 h1:H4GSortZKs6bm2ylvVRHRHCwjZ+NE90P2OhYikjJwvI=
 github.com/apache/rocketmq-client-go/v2 v2.0.0-rc2/go.mod h1:oEZKFDvS7sz/RWU0839+dQBupazyBV7WX5cP6nrio0Q=
+github.com/apache/rocketmq-client-go/v2 v2.0.0 h1:D6jFj3DcNjWyjWn5N/R7Eq8v5kLqlgkFnT/DNQFnWlM=
+github.com/apache/rocketmq-client-go/v2 v2.0.0/go.mod h1:oEZKFDvS7sz/RWU0839+dQBupazyBV7WX5cP6nrio0Q=
 github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e h1:QEF07wC0T1rKkctt1RINW/+RMTVmiwxETico2l3gxJA=
 github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e/go.mod h1:3U/XgcO3hCbHZ8TKRvWD2dDTCfh9M9ya+I9JpbB7O8o=
 github.com/armon/go-metrics v0.0.0-20180917152333-f0300d1749da/go.mod h1:Q73ZrmVTwzkszR9V5SSuryQ31EELlFMUz1kKyl939pY=

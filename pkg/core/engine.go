@@ -275,7 +275,13 @@ func (eng *Engine) startHealCheck() error {
 func (eng *Engine) startWorker() error {
 	worker := job.StdConfig("worker").Build()
 	eng.worker = worker
-	return worker.Run()
+	xgo.Go(func() {
+		err := worker.Run()
+		if err != nil {
+			xlog.Panic("engine: run Job-Worker failed", xlog.FieldErr(err))
+		}
+	})
+	return nil
 }
 
 func (eng *Engine) loadServiceConfiguration(name string) interface{} {
