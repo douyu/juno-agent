@@ -5,7 +5,7 @@ BASE_PATH:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 SCRIPT_PATH:=$(BASE_PATH)/script
 APP_NAME:=$(shell basename $(BASE_PATH))
 COMPILE_OUT:=$(BASE_PATH)/release
-APP_VERSION:=0.4.0
+APP_VERSION:=0.1.0
 
 
 all:print fmt buildAgent
