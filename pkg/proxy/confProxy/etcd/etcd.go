@@ -174,6 +174,8 @@ func (d *DataSource) AppConfigScanner() []*structs.ConfNode {
 func (d *DataSource) watch() {
 	// etcd的key用作配置数据读取
 	hostKey := strings.Join([]string{d.prefix, report.ReturnHostName()}, "/")
+	xlog.Info("watch", xlog.String("plugin", "confgo"), xlog.String("hostKey", hostKey))
+
 	// init watch
 	watch, err := d.etcdClient.WatchPrefix(context.Background(), hostKey)
 
