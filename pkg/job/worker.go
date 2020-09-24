@@ -353,7 +353,7 @@ func (w *Worker) handleOnceEv(ev clientv3.WatchResponse) {
 			}
 
 			job.Worker = w
-			go job.RunWithRecovery(WithTaskID(job.TaskID))
+			go job.RunWithRecovery(WithTaskID(job.TaskID), WithExecuteType(ExecuteTypeManual))
 		}
 	}
 }
