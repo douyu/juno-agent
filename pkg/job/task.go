@@ -17,6 +17,7 @@ type (
 		job        *Job
 		executedAt time.Time
 		finishedAt *time.Time
+		defers     []func()
 	}
 
 	TaskOption func(t *Task)
@@ -108,5 +109,15 @@ func WithTaskID(taskId uint64) TaskOption {
 func WithExecuteType(executeType ExecuteType) TaskOption {
 	return func(t *Task) {
 		t.ExecuteType = executeType
+	}
+}
+
+func WithDefers(fns ...func()) TaskOption {
+	return func(t *Task) {
+		if t.defers == nil {
+			t.defers = make([]func(), 0)
+		}
+
+		t.defers = append(t.defers, fns...)
 	}
 }

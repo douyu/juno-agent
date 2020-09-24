@@ -104,6 +104,13 @@ func (j *Job) Run(taskOptions ...TaskOption) error {
 	)
 
 	task := NewTask(j, taskOptions...)
+	defer func() {
+		// defers
+		for _, fn := range task.defers {
+			fn()
+		}
+	}()
+
 	_ = task.SetStatus(CronTaskStatusProcessing, "")
 
 	if j.Timeout > 0 {
@@ -205,13 +212,7 @@ func (j *Job) ValidRules() error {
 }
 
 func (j *Job) Lock() error {
-	var err error
-	err = j.mutex.Lock(time.Second)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return j.mutex.Lock(time.Second)
 }
 
 func (j *Job) Unlock() {
