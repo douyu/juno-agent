@@ -60,8 +60,7 @@ type Job struct {
 	// 用于访问etcd
 	*Worker `json:"-"`
 
-	mutex  *etcdv3.Mutex
-	locked bool
+	mutex *etcdv3.Mutex
 }
 
 // NewEtcdTimeoutContext return a new etcdTimeoutContext
@@ -211,7 +210,6 @@ func (j *Job) Lock() error {
 	if err != nil {
 		return err
 	}
-	j.locked = true
 
 	return nil
 }

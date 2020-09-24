@@ -155,7 +155,6 @@ func (w *Worker) modJob(job *Job) {
 	}
 
 	job.Worker = w
-	job.locked = oJob.locked
 
 	if util.InStringArray(job.Nodes, w.HostName) < 0 {
 		w.delJob(job.ID)
@@ -164,9 +163,7 @@ func (w *Worker) modJob(job *Job) {
 
 	if job.JobType != oJob.JobType { // if job-type modified
 		if job.JobType == TypeNormal {
-			if job.mutex != nil && job.locked {
-				job.mutex.Unlock()
-			}
+			_ = job.mutex.Unlock()
 		} else if job.JobType == TypeAlone {
 			w.delJob(job.ID)
 			w.addJob(job)
