@@ -15,7 +15,7 @@ timeout = "3s"
 enable = true
 
 #配置中心数据源
-[pugin.confProxy.mysql]
+[plugin.confProxy.mysql]
 enable = false
 dsn = ""
 secure = false
@@ -45,12 +45,13 @@ zoneName = "ZONE_NAME"
 env = "ENV"
 
 [plugin.healthCheck]
-enable = true
+enable = false
 
 [plugin.process]
 enable = false
 
 [plugin.worker]
+enable = false
 reqTimeout = 10
 
 # service registry etcd

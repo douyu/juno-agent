@@ -23,6 +23,8 @@ const (
 )
 
 type Config struct {
+	Enable bool
+
 	EtcdConfigKey   string // jupiter.etcdv3.xxxxxx
 	ReqTimeout      int    // 请求操作ETCD的超时时间，单位秒
 	RequireLockTime int64  // 抢锁等待时间，单位秒
@@ -39,6 +41,7 @@ type Config struct {
 func DefaultConfig() *Config {
 	return &Config{
 		ReqTimeout: 3,
+		Enable:     false,
 	}
 }
 
@@ -56,6 +59,9 @@ func StdConfig(key string) *Config {
 
 // Build new a instance
 func (c *Config) Build() *Worker {
+	if !c.Enable {
+		return nil
+	}
 	c.HostName = report.ReturnHostName()
 	c.AppIP = report.ReturnAppIp()
 

@@ -274,6 +274,9 @@ func (eng *Engine) startHealCheck() error {
 
 func (eng *Engine) startWorker() error {
 	worker := job.StdConfig("worker").Build()
+	if worker == nil {
+		return nil
+	}
 	eng.worker = worker
 	return worker.Run()
 }
