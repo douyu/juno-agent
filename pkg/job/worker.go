@@ -133,8 +133,8 @@ func (w *Worker) delJob(id string) {
 
 	xlog.Error("Worker.delJob:delete a job", xlog.String("jobId", id))
 
-	delete(w.jobs, id)
 	job.Unlock()
+	delete(w.jobs, id)
 
 	cmds := job.Cmds()
 	if len(cmds) == 0 {
@@ -155,7 +155,7 @@ func (w *Worker) modJob(job *Job) {
 	}
 
 	job.Worker = w
-	job.locked = oJob.locked
+	job.mutex = oJob.mutex
 
 	if util.InStringArray(job.Nodes, w.HostName) < 0 {
 		w.delJob(job.ID)
@@ -164,11 +164,8 @@ func (w *Worker) modJob(job *Job) {
 
 	if job.JobType != oJob.JobType { // if job-type modified
 		if job.JobType == TypeNormal {
-			if job.mutex != nil && job.locked {
-				job.mutex.Unlock()
-			}
+			_ = oJob.mutex.Unlock()
 		} else if job.JobType == TypeAlone {
-			w.delJob(job.ID)
 			w.addJob(job)
 			return
 		}
@@ -190,6 +187,7 @@ func (w *Worker) modJob(job *Job) {
 }
 
 func (w *Worker) addJob(job *Job) {
+	w.delJob(job.ID)
 	job.Worker = w
 
 	if util.InStringArray(job.Nodes, w.HostName) < 0 {
@@ -201,6 +199,7 @@ func (w *Worker) addJob(job *Job) {
 	if job.JobType == TypeAlone {
 		err := job.Lock()
 		if err != nil {
+			job.Unlock()
 			xlog.Info("failed to lock job. ignore it", xlog.String("jobId", job.ID))
 			return
 		}
@@ -356,7 +355,16 @@ func (w *Worker) handleOnceEv(ev clientv3.WatchResponse) {
 			}
 
 			job.Worker = w
-			go job.RunWithRecovery(WithTaskID(job.TaskID))
+			go job.RunWithRecovery(
+				WithTaskID(job.TaskID),
+				WithExecuteType(ExecuteTypeManual),
+				WithDefers(func() {
+					_, err = w.Client.Delete(context.Background(), string(event.Kv.Key))
+					if err != nil {
+						xlog.Error("Worker.handleOnceEv: delete once key failed", xlog.FieldErr(err))
+					}
+				}),
+			)
 		}
 	}
 }
