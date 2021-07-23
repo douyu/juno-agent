@@ -3,7 +3,7 @@ project_name: juno-agent
 builds:
 - main: ./cmd/juno-agent
   id: "juno-agent"
-  binary: juno--agent
+  binary: juno-agent
   goos:
     - linux
     - darwin
