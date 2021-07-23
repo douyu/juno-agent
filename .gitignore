@@ -15,3 +15,4 @@ configs/
 logs/
 *.log
 *.log.*
+dist/
