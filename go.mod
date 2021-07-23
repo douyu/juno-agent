@@ -3,7 +3,7 @@ module github.com/douyu/juno-agent
 go 1.14
 
 require (
-	github.com/apache/rocketmq-client-go v0.0.0-20191211114916-85ee94b43cef // indirect
+	github.com/HdrHistogram/hdrhistogram-go v1.1.0 // indirect
 	github.com/apache/rocketmq-client-go/v2 v2.0.0
 	github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e
 	github.com/cenkalti/backoff v2.2.1+incompatible
@@ -24,7 +24,7 @@ require (
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sony/sonyflake v1.0.0
-	github.com/stretchr/testify v1.6.1
+	github.com/stretchr/testify v1.7.0
 	github.com/tidwall/gjson v1.6.0 // indirect
 	github.com/uber-go/atomic v1.4.0
 	github.com/uber/jaeger-client-go v2.25.0+incompatible // indirect

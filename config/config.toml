@@ -6,6 +6,8 @@ enable = true
 [plugin.regProxy.prometheus]
 enable = true
 path = "/home/www/system/prometheus/conf"
+enableRegion = false
+region = [] # 用于支持region过滤
 
 [plugin.confProxy]
 # 配置中心地址
@@ -56,12 +58,12 @@ reqTimeout = 10
 
 # service registry etcd
 [jupiter.etcdv3.register]
-endpoints = ["127.0.0.1:2379"]
+endpoints = ["etcd-naming.dz11.com:2379"]
 connectTimeout = "10s"
 
 # default etcd (config-publish / cronjob-dispatch / etc...)
 [jupiter.etcdv3.default]
-endpoints = ["127.0.0.1:2379"]
+endpoints = ["etcd-naming.dz11.com:2379"]
 connectTimeout = "10s"
 
 [jupiter.logger.default]
