@@ -31,7 +31,7 @@ func (d *DataSource) parseGovernKey(key string) *governValue {
 		return nil
 	}
 
-	govern.AppName = strings.ReplaceAll(keyArr[2], ":", "_")
+	govern.AppName = strings.Split(keyArr[2], ":")[0]
 	govern.Hostname = keyArr[3]
 
 	return govern
