@@ -6,8 +6,8 @@ enable = true
 [plugin.regProxy.prometheus]
 enable = true
 path = "/home/www/system/prometheus/conf"
-enableRegion = false
-region = [] # 用于支持region过滤
+enableZone = false
+zones = [] # 用于支持zone过滤
 
 [plugin.confProxy]
 # 配置中心地址

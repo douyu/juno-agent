@@ -58,9 +58,9 @@ func (d *DataSource) filter(govern *governValue) *governValue {
 		return nil
 	}
 
-	// 指处理指定region的实例
-	for _, region := range d.region {
-		if region == govern.Region {
+	// 指处理指定zone的实例
+	for _, zone := range d.zones {
+		if zone == govern.Zone {
 			return govern
 		}
 	}

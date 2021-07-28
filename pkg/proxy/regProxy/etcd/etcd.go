@@ -33,8 +33,8 @@ type DataSource struct {
 	etcdClient *etcdv3.Client
 	prefix     string
 	// 用于记录长轮训的应用信息
-	jm     list.List // *job
-	region []string
+	jm    list.List // *job
+	zones []string
 }
 
 // configNode etcd node chan info
@@ -47,11 +47,11 @@ type configNode struct {
 func NewETCDDataSource(prometheusTargetGenConfig PluginRegProxyPrometheus) *DataSource {
 	dataSource := &DataSource{
 		etcdClient: etcdv3.StdConfig("register").Build(),
-		region:     prometheusTargetGenConfig.Region,
+		zones:      prometheusTargetGenConfig.Zones,
 	}
 
 	if prometheusTargetGenConfig.Enable {
-		if !prometheusTargetGenConfig.EnableRegion {
+		if !prometheusTargetGenConfig.EnableZone {
 			dataSource.PrometheusConfigScanner(prometheusTargetGenConfig.Path)
 			xgo.Go(func() {
 				dataSource.watchPrometheus(prometheusTargetGenConfig.Path)
