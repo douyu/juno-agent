@@ -3,8 +3,11 @@ package etcd
 import (
 	"context"
 	"encoding/json"
+	"io/fs"
 	"os"
+	"path"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/coreos/etcd/clientv3"
@@ -153,4 +156,39 @@ func (d *DataSource) GovernConfigScanner(path string) {
 		}
 	}
 	return
+}
+
+// cleanup clean invalid prometheus yml
+func (d *DataSource) cleanup(prometheusDir string, timeInterval uint32) {
+	var (
+		once sync.Once
+	)
+	fileSystem := os.DirFS(prometheusDir)
+	cleanFunc := func() {
+		err := fs.WalkDir(fileSystem, ".", func(p string, d fs.DirEntry, err error) error {
+			depth := strings.Count(prometheusDir, "/") - strings.Count(p, "/")
+			if depth != strings.Count(prometheusDir, "/") {
+				return nil
+			}
+
+			fileInfo, _ := d.Info()
+			if fileInfo.IsDir() {
+				return nil
+			}
+
+			if time.Now().Unix()-fileInfo.ModTime().Unix() > int64(timeInterval) {
+				if path.Ext(path.Base(p)) != ".yml" {
+					return nil
+				}
+				return os.Remove(path.Join(prometheusDir, p))
+			}
+			return nil
+		})
+		if err != nil {
+			xlog.Error("remove file error", xlog.FieldErr(err))
+		}
+	}
+	once.Do(func() {
+		cleanFunc()
+	})
 }
