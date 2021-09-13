@@ -385,6 +385,9 @@ func (eng *Engine) checkServiceNodes() {
 }
 
 func (eng *Engine) cleanJobs() error {
+	if eng.worker == nil {
+		return nil
+	}
 	eng.worker.CleanJobs()
 	return nil
 }
