@@ -33,8 +33,15 @@ func (d *DataSource) watchPrometheus(path string) {
 						xlog.Error("watchPrometheus", xlog.String("key", key), xlog.String("value", value))
 						break
 					}
+					if value == "" {
+						value = keyArr[len(keyArr) -1]
+					}
 					filename := keyArr[3] + "_" + value
-					_ = os.Remove(path + "/" + filename + ".yml")
+					filePath := path + "/" + filename + ".yml"
+					err = os.Remove(filePath)
+					if err != nil {
+						print(err)
+					}
 				case mvccpb.PUT:
 					key, value := string(event.Kv.Key), string(event.Kv.Value)
 					keyArr := strings.Split(key, "/")
