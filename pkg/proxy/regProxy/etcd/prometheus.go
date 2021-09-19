@@ -40,7 +40,7 @@ func (d *DataSource) watchPrometheus(path string) {
 					filePath := path + "/" + filename + ".yml"
 					err = os.Remove(filePath)
 					if err != nil {
-						print(err)
+						xlog.Error("remove prometheus file error",xlog.FieldErr(err))
 					}
 				case mvccpb.PUT:
 					key, value := string(event.Kv.Key), string(event.Kv.Value)
