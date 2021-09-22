@@ -50,19 +50,29 @@ func NewETCDDataSource(prometheusTargetGenConfig PluginRegProxyPrometheus) *Data
 		zones:      prometheusTargetGenConfig.Zones,
 	}
 
-	if prometheusTargetGenConfig.Enable {
-		if !prometheusTargetGenConfig.EnableZone {
-			dataSource.PrometheusConfigScanner(prometheusTargetGenConfig.Path)
-			xgo.Go(func() {
-				dataSource.watchPrometheus(prometheusTargetGenConfig.Path)
-			})
-		} else {
-			dataSource.GovernConfigScanner(prometheusTargetGenConfig.Path)
-			xgo.Go(func() {
-				dataSource.watchGovern(prometheusTargetGenConfig.Path)
-			})
-		}
+	if !prometheusTargetGenConfig.Enable {
+		return dataSource
 	}
+	if prometheusTargetGenConfig.TimeInterval == 0 {
+		prometheusTargetGenConfig.TimeInterval = 60
+	}
+
+	if !prometheusTargetGenConfig.EnableZone {
+		dataSource.PrometheusConfigScanner(prometheusTargetGenConfig.Path)
+		xgo.Go(func() {
+			dataSource.watchPrometheus(prometheusTargetGenConfig.Path)
+		})
+		return dataSource
+	}
+
+	dataSource.GovernConfigScanner(prometheusTargetGenConfig.Path)
+	xgo.Go(func() {
+		dataSource.watchGovern(prometheusTargetGenConfig.Path)
+	})
+	if prometheusTargetGenConfig.EnableCleanup {
+		dataSource.cleanup(prometheusTargetGenConfig.Path, prometheusTargetGenConfig.TimeInterval)
+	}
+
 
 	return dataSource
 }

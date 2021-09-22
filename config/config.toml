@@ -6,8 +6,10 @@ enable = true
 [plugin.regProxy.prometheus]
 enable = true
 path = "/home/www/system/prometheus/conf"
-enableZone = false
-zones = [] # 用于支持zone过滤
+enableZone = true
+zones = ["HB-WHYL"] # 用于支持zone过滤
+enableCleanup = true
+timeInterval = 10
 
 [plugin.confProxy]
 # 配置中心地址
