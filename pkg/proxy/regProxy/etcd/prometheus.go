@@ -27,20 +27,18 @@ func (d *DataSource) watchPrometheus(path string) {
 			case event := <-watch.C():
 				switch event.Type {
 				case mvccpb.DELETE:
-					key, value := string(event.Kv.Key), string(event.Kv.Value)
+					key := string(event.Kv.Key)
 					keyArr := strings.Split(key, "/")
 					if len(keyArr) != 5 && len(keyArr) != 6 {
-						xlog.Error("watchPrometheus", xlog.String("key", key), xlog.String("value", value))
+						xlog.Error("watchPrometheus", xlog.String("key", key))
 						break
 					}
-					if value == "" {
-						value = keyArr[len(keyArr) -1]
-					}
-					filename := keyArr[3] + "_" + value
+
+					filename := keyArr[3] + "_" + keyArr[4]
 					filePath := path + "/" + filename + ".yml"
 					err = os.Remove(filePath)
 					if err != nil {
-						xlog.Error("remove prometheus file error",xlog.FieldErr(err))
+						xlog.Error("remove prometheus file error", xlog.FieldErr(err))
 					}
 				case mvccpb.PUT:
 					key, value := string(event.Kv.Key), string(event.Kv.Value)
@@ -49,7 +47,7 @@ func (d *DataSource) watchPrometheus(path string) {
 						xlog.Error("watchPrometheus", xlog.String("key", key), xlog.String("value", value))
 						break
 					}
-					filename := keyArr[3] + "_" + value
+					filename := keyArr[3] + "_" + keyArr[4]
 					content := `
 - targets:
     - "` + value + `"
@@ -82,7 +80,7 @@ func (d *DataSource) PrometheusConfigScanner(path string) {
 			xlog.Error("PrometheusConfigScanner", xlog.String("key", key), xlog.String("value", value))
 			continue
 		}
-		filename := keyArr[3] + "_" + value
+		filename := keyArr[3] + "_" + keyArr[4]
 
 		content := `
 - targets:
