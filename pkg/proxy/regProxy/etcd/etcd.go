@@ -62,17 +62,16 @@ func NewETCDDataSource(prometheusTargetGenConfig PluginRegProxyPrometheus) *Data
 		xgo.Go(func() {
 			dataSource.watchPrometheus(prometheusTargetGenConfig.Path)
 		})
-		return dataSource
+	} else {
+		dataSource.GovernConfigScanner(prometheusTargetGenConfig.Path)
+		xgo.Go(func() {
+			dataSource.watchGovern(prometheusTargetGenConfig.Path)
+		})
 	}
 
-	dataSource.GovernConfigScanner(prometheusTargetGenConfig.Path)
-	xgo.Go(func() {
-		dataSource.watchGovern(prometheusTargetGenConfig.Path)
-	})
 	if prometheusTargetGenConfig.EnableCleanup {
 		dataSource.cleanup(prometheusTargetGenConfig.Path, prometheusTargetGenConfig.TimeInterval)
 	}
-
 
 	return dataSource
 }
