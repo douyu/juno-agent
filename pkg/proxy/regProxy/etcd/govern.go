@@ -79,7 +79,14 @@ func (d *DataSource) writeFile(path string, govern *governValue) error {
   labels:
     instance: ` + govern.Hostname + `
     job: ` + govern.AppName
-
+	contentForRoscope := `
+- application: ` + govern.AppName + `
+  targets:
+    - "` + govern.Addr + `"
+  labels:
+    instance: ` + govern.Hostname + `
+    job: ` + govern.AppName
+	util.WriteFile(path+"/"+"pyroscope/"+filename+".yml", contentForRoscope)
 	return util.WriteFile(path+"/"+filename+".yml", content)
 }
 
@@ -107,6 +114,7 @@ func (d *DataSource) watchGovern(path string) {
 
 					filename := govern.AppName + "_" + govern.Hostname
 					_ = os.Remove(path + "/" + filename + ".yml")
+					_ = os.Remove(path + "/" + "pyroscope/" + filename + ".yml")
 				case mvccpb.PUT:
 					key, value := string(event.Kv.Key), string(event.Kv.Value)
 					govern := d.parseGovern(key, value)
