@@ -79,7 +79,14 @@ func (d *DataSource) writeFile(path string, govern *governValue) error {
   labels:
     instance: ` + govern.Hostname + `
     job: ` + govern.AppName
-
+	contentForRoscope := `
+- application: ` + govern.AppName + `
+  targets:
+    - "` + govern.Addr + `"
+  labels:
+    instance: ` + govern.Hostname + `
+    job: ` + govern.AppName
+	util.WriteFile(path+"/"+"pyroscope/"+filename+".yml", contentForRoscope)
 	return util.WriteFile(path+"/"+filename+".yml", content)
 }
 
