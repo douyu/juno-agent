@@ -114,6 +114,7 @@ func (d *DataSource) watchGovern(path string) {
 
 					filename := govern.AppName + "_" + govern.Hostname
 					_ = os.Remove(path + "/" + filename + ".yml")
+					_ = os.Remove(path + "/" + "pyroscope/" + filename + ".yml")
 				case mvccpb.PUT:
 					key, value := string(event.Kv.Key), string(event.Kv.Value)
 					govern := d.parseGovern(key, value)
