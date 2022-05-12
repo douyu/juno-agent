@@ -35,8 +35,8 @@ type Config struct {
 	Env     []string      `json:"env"`
 	Timeout time.Duration // etcd连接超时时间
 	Secure  bool
-	Enable  bool                    // 是否开启开插件
-	Mysql   ConfDataSourceMysql     `json:"mysql"`
+	Enable  bool                // 是否开启开插件
+	Mysql   ConfDataSourceMysql `json:"mysql"`
 }
 
 // ConfDataSourceMysql mysql dataSource
