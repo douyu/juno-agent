@@ -13,4 +13,3 @@ func makeCmdAttr() *syscall.SysProcAttr {
 func killProcess(pid int) error {
 	return exec.Command("taskkill", "/T", "/F", "/PID", strconv.Itoa(pid)).Run()
 }
-

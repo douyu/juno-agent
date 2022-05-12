@@ -16,6 +16,7 @@ package model
 
 // AgentReportRequest agent status
 type AgentReportRequest struct {
+	VCSInfo      string `json:"vcs_info"`
 	Hostname     string `json:"hostname"`
 	IP           string `json:"ip"`
 	AgentVersion string `json:"agent_version"`

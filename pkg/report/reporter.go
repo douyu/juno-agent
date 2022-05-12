@@ -15,8 +15,10 @@
 package report
 
 import (
-	"github.com/douyu/juno-agent/pkg/model"
 	"time"
+
+	"github.com/douyu/juno-agent/pkg/model"
+	"github.com/douyu/jupiter/pkg"
 )
 
 // ReporterResp ...
@@ -48,6 +50,7 @@ func (r *Report) ReportAgentStatus() error {
 				Hostname:     r.config.HostName,
 				IP:           appIP,
 				AgentType:    1,
+				VCSInfo:      pkg.AppVersion(),
 				AgentVersion: "0.2.1",
 				RegionCode:   r.config.RegionCode,
 				RegionName:   r.config.RegionName,
