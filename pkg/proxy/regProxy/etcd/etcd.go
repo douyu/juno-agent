@@ -46,7 +46,7 @@ type configNode struct {
 // NewETCDDataSource ...
 func NewETCDDataSource(prometheusTargetGenConfig PluginRegProxyPrometheus) *DataSource {
 	dataSource := &DataSource{
-		etcdClient: etcdv3.StdConfig("register").Build(),
+		etcdClient: etcdv3.StdConfig("register").MustBuild(),
 		zones:      prometheusTargetGenConfig.Zones,
 	}
 

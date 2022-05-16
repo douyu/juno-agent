@@ -17,7 +17,6 @@ package core
 import (
 	"strconv"
 
-	pb "github.com/coreos/etcd/etcdserver/etcdserverpb"
 	"github.com/douyu/juno-agent/pkg/file"
 	"github.com/douyu/juno-agent/pkg/model"
 	"github.com/douyu/juno-agent/pkg/pmt"
@@ -26,12 +25,13 @@ import (
 	"github.com/douyu/jupiter/pkg/server/xecho"
 	"github.com/douyu/jupiter/pkg/server/xgrpc"
 	"github.com/labstack/echo/v4"
+	pb "go.etcd.io/etcd/api/v3/etcdserverpb"
 	"google.golang.org/grpc/examples/helloworld/helloworld"
 )
 
 func (eng *Engine) serveHTTP() error {
 
-	s := xecho.StdConfig("http").Build()
+	s, _ := xecho.StdConfig("http").Build()
 
 	group := s.Group("/api")
 	group.GET("/agent/reload", eng.agentReload)           // restart confd monitoring
@@ -53,7 +53,7 @@ func (eng *Engine) serveHTTP() error {
 
 func (eng *Engine) serveGRPC() error {
 	config := xgrpc.StdConfig("grpc")
-	server := config.Build()
+	server, _ := config.Build()
 	pb.RegisterKVServer(server.Server, eng.regProxy)
 	pb.RegisterWatchServer(server.Server, eng.regProxy)
 	pb.RegisterLeaseServer(server.Server, eng.regProxy)

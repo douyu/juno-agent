@@ -20,14 +20,14 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/coreos/etcd/clientv3"
-	"github.com/coreos/etcd/clientv3/concurrency"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/douyu/juno-agent/pkg/job/etcd"
 	"github.com/douyu/juno-agent/util"
 	"github.com/douyu/jupiter/pkg/client/etcdv3"
 	"github.com/douyu/jupiter/pkg/xlog"
 	"github.com/sony/sonyflake"
+	"go.etcd.io/etcd/api/v3/mvccpb"
+	clientv3 "go.etcd.io/etcd/client/v3"
+	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
 // Node 执行 cron 命令服务的结构体
@@ -51,7 +51,7 @@ func NewWorker(conf *Config) (w *Worker) {
 	w = &Worker{
 		Config:         conf,
 		ID:             conf.HostName,
-		Client:         etcdv3.StdConfig("default").Build(),
+		Client:         etcdv3.StdConfig("default").MustBuild(),
 		ImmediatelyRun: false,
 		cmds:           make(map[string]*Cmd),
 		runningJobs:    make(map[string]context.CancelFunc),

@@ -24,14 +24,14 @@ import (
 	"strings"
 	"sync"
 
-	pb "github.com/coreos/etcd/etcdserver/etcdserverpb"
-	"github.com/coreos/etcd/proxy/grpcproxy"
 	"github.com/douyu/juno-agent/pkg/proxy/regProxy/etcd"
 	"github.com/douyu/juno-agent/pkg/structs"
 	"github.com/douyu/jupiter/pkg/client/etcdv3"
 	"github.com/douyu/jupiter/pkg/util/xdebug"
 	"github.com/douyu/jupiter/pkg/util/xstring"
 	"github.com/douyu/jupiter/pkg/xlog"
+	pb "go.etcd.io/etcd/api/v3/etcdserverpb"
+	"go.etcd.io/etcd/server/v3/proxy/grpcproxy"
 	"google.golang.org/grpc/examples/helloworld/helloworld"
 )
 
@@ -45,6 +45,7 @@ type RegProxy struct {
 	nodeChan chan *structs.ServiceNode
 
 	serviceConfigurations sync.Map
+	helloworld.GreeterServer
 }
 
 // NewRegProxy ...
@@ -67,8 +68,8 @@ func (proxy *RegProxy) SayHello(ctx context.Context, request *helloworld.HelloRe
 // Start ...
 func (proxy *RegProxy) Start() error {
 	proxy.KVServer, _ = grpcproxy.NewKvProxy(proxy.Client.Client)
-	proxy.LeaseServer, _ = grpcproxy.NewLeaseProxy(proxy.Client.Client)
-	proxy.WatchServer, _ = grpcproxy.NewWatchProxy(proxy.Client.Client)
+	proxy.LeaseServer, _ = grpcproxy.NewLeaseProxy(context.TODO(), proxy.Client.Client)
+	proxy.WatchServer, _ = grpcproxy.NewWatchProxy(context.TODO(), proxy.GetLogger(), proxy.Client.Client)
 	return nil
 }
 
