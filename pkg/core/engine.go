@@ -34,6 +34,7 @@ import (
 	"github.com/douyu/juno-agent/pkg/structs"
 	"github.com/douyu/jupiter"
 	"github.com/douyu/jupiter/pkg/client/etcdv3"
+	"github.com/douyu/jupiter/pkg/hooks"
 	"github.com/douyu/jupiter/pkg/util/xgo"
 	"github.com/douyu/jupiter/pkg/xlog"
 	"golang.org/x/sync/errgroup"
@@ -92,10 +93,7 @@ func NewEngine() *Engine {
 		xlog.Panic("new engine", xlog.Any("err", err))
 	}
 
-	err := eng.RegisterHooks(jupiter.StageAfterStop, eng.cleanJobs)
-	if err != nil {
-		xlog.Panicf("register hook failed. err=%s", err.Error())
-	}
+	eng.RegisterHooks(hooks.Stage(jupiter.StageAfterStop), eng.cleanJobs)
 
 	return eng
 }
@@ -384,10 +382,10 @@ func (eng *Engine) checkServiceNodes() {
 	}
 }
 
-func (eng *Engine) cleanJobs() error {
+func (eng *Engine) cleanJobs() {
 	if eng.worker == nil {
-		return nil
+		return
 	}
 	eng.worker.CleanJobs()
-	return nil
+	return
 }

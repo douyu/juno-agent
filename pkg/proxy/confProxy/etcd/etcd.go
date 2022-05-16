@@ -24,8 +24,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/coreos/etcd/clientv3"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/douyu/juno-agent/pkg/report"
 	"github.com/douyu/juno-agent/pkg/structs"
 	"github.com/douyu/juno-agent/util"
@@ -36,6 +34,8 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
+	"go.etcd.io/etcd/api/v3/mvccpb"
+	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
 var (
@@ -62,8 +62,8 @@ type configNode struct {
 // NewETCDDataSource ...
 func NewETCDDataSource(prefix string) *DataSource {
 	dataSource := &DataSource{
-		etcdClient:       etcdv3.StdConfig("default").Build(),
-		etcdClientReport: etcdv3.StdConfig("default").Build(),
+		etcdClient:       etcdv3.StdConfig("default").MustBuild(),
+		etcdClientReport: etcdv3.StdConfig("default").MustBuild(),
 		prefix:           prefix,
 	}
 	xgo.Go(dataSource.watch)
@@ -300,7 +300,7 @@ func (d *DataSource) report(key, value string) error {
 	}
 	if _, err := d.etcdClientReport.Put(ctx, reportKey, reportValue.JSONString()); err != nil {
 		//if err == auth.ErrInvalidAuthToken {
-		d.etcdClientReport = etcdv3.RawConfig("plugin.confProxy.etcd").Build()
+		d.etcdClientReport = etcdv3.RawConfig("plugin.confProxy.etcd").MustBuild()
 		if _, err := d.etcdClientReport.Put(ctx, reportKey, reportValue.JSONString()); err != nil {
 			return err
 		}
