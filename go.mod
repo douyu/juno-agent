@@ -1,13 +1,13 @@
 module github.com/douyu/juno-agent
 
-go 1.14
+go 1.16
 
 require (
 	github.com/HdrHistogram/hdrhistogram-go v1.1.0 // indirect
 	github.com/apache/rocketmq-client-go/v2 v2.1.1-rc2
 	github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e
 	github.com/cenkalti/backoff v2.2.1+incompatible
-	github.com/douyu/jupiter v0.4.6
+	github.com/douyu/jupiter v0.4.7
 	github.com/fsnotify/fsnotify v1.5.1
 	github.com/garyburd/redigo v1.6.0
 	github.com/go-resty/resty/v2 v2.7.0
