@@ -38,7 +38,7 @@ jobs:
           # either 'goreleaser' (default) or 'goreleaser-pro'
           distribution: goreleaser
           version: latest
-          args: release --rm-dist
+          args: release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/upload-artifact@v2
@@ -64,7 +64,7 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           image: ${{ env.IMAGE_NAME }}
-          addLatest: true
+          addLatest: false
           dockerfile: Dockerfile
           username: ${{ secrets.GHCR_USERNAME }}
           password: ${{ secrets.GHCR_TOKEN }}
