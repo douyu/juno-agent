@@ -15,6 +15,7 @@
 package core
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/douyu/juno-agent/pkg/file"
@@ -34,6 +35,7 @@ func (eng *Engine) serveHTTP() error {
 	s, _ := xecho.StdConfig("http").Build()
 
 	group := s.Group("/api")
+	group.GET("/config/:target", eng.getAppConfigContent)
 	group.GET("/agent/reload", eng.agentReload)           // restart confd monitoring
 	group.GET("/agent/process/status", eng.processStatus) // real time process status
 	group.POST("/agent/process/shell", eng.pmtShell)
@@ -162,6 +164,31 @@ func (eng *Engine) getRawAppConfig(ctx echo.Context) error {
 		return reply400(ctx, err.Error())
 	}
 	return reply200(ctx, res)
+}
+
+// getAppConfigContent
+// 获取应用配置内容
+// 优先获取按host下发的配置，如果获取失败则获取按app下发的配置
+// 不支持多配置文件合并，由客户端自行处理
+func (eng *Engine) getAppConfigContent(ctx echo.Context) error {
+	var (
+		name   = ctx.QueryParam("name")
+		envi   = ctx.QueryParam("env")
+		target = ctx.Param("target")
+	)
+	if name == "" || envi == "" {
+		return ctx.JSON(400, nil)
+	}
+
+	appKey := fmt.Sprintf("/minerva-agent/%s/%s/%s/static/%s", "cluster", name, envi, target)
+	res, err := eng.confProxy.GetRawValues(ctx, appKey)
+	if err != nil {
+		return reply400(ctx, err.Error())
+	}
+	if res != "" {
+		return ctx.String(200, res)
+	}
+	return ctx.JSON(400, nil)
 }
 
 // processStatus show the process status of machine
