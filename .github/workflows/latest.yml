@@ -57,7 +57,7 @@ jobs:
       - name: Extract metadata (tags, labels) for Docker
         if: github.event_name == 'push'
         id: meta
-        uses: docker/metadata-action@v3.6.0
+        uses: docker/metadata-action@v4.1.1
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
