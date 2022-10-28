@@ -18,7 +18,7 @@ require (
 	github.com/mattn/go-sqlite3 v2.0.1+incompatible // indirect
 	github.com/nats-io/nats.go v1.9.2
 	github.com/robfig/cron/v3 v3.0.1
-	github.com/sony/sonyflake v1.0.0
+	github.com/sony/sonyflake v1.1.0
 	github.com/stretchr/testify v1.7.0
 	github.com/uber-go/atomic v1.4.0
 	github.com/uber/jaeger-client-go v2.25.0+incompatible // indirect
