@@ -63,7 +63,7 @@ jobs:
 
       - name: Build and push Docker image
         if: github.event_name == 'push'
-        uses: mr-smithers-excellent/docker-build-push@v5.6
+        uses: mr-smithers-excellent/docker-build-push@v5.8
         with:
           registry: ${{ env.REGISTRY }}
           image: ${{ env.IMAGE_NAME }}
