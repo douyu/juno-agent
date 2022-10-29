@@ -16,7 +16,7 @@ require (
 	github.com/labstack/echo/v4 v4.6.3
 	github.com/labstack/gommon v0.3.1
 	github.com/mattn/go-sqlite3 v2.0.1+incompatible // indirect
-	github.com/nats-io/nats.go v1.9.2
+	github.com/nats-io/nats.go v1.19.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sony/sonyflake v1.1.0
 	github.com/stretchr/testify v1.7.0
