@@ -46,7 +46,7 @@ jobs:
       #     version: v1.50.1
 
       - name: Build
-        run: go build -v .
+        run: go build -v ./cmd/juno-agent
       - name: Test
         run: |
           go test -race -coverprofile=coverage.txt -covermode=atomic ./...
