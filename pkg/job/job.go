@@ -133,7 +133,7 @@ func (j *Job) Run(taskOptions ...TaskOption) error {
 		return fmt.Errorf("script is a dir, not a executable file. jobId[%s] script[%s]", j.ID, j.Script)
 	}
 
-	j.logger.Infof("command is : %s", j.Script)
+	j.logger.Sugar().Infof("command is : %s", j.Script)
 	cmd = exec.CommandContext(ctx, j.Script)
 
 	sysProcAttr := makeCmdAttr()
@@ -190,7 +190,7 @@ func (j *Job) RunWithRecovery() {
 			const size = 64 << 10
 			buf := make([]byte, size)
 			buf = buf[:runtime.Stack(buf, false)]
-			j.logger.Warnf("panic running job: %v\n%s", r, buf)
+			j.logger.Sugar().Warnf("panic running job: %v\n%s", r, buf)
 		}
 	}()
 	_ = j.Run()

@@ -34,7 +34,7 @@ import (
 	"github.com/douyu/juno-agent/pkg/structs"
 	"github.com/douyu/jupiter"
 	"github.com/douyu/jupiter/pkg/client/etcdv3"
-	"github.com/douyu/jupiter/pkg/hooks"
+	"github.com/douyu/jupiter/pkg/core/hooks"
 	"github.com/douyu/jupiter/pkg/util/xgo"
 	"github.com/douyu/jupiter/pkg/xlog"
 	"golang.org/x/sync/errgroup"
@@ -73,7 +73,6 @@ func NewEngine() *Engine {
 	//)
 
 	if err := eng.Startup(
-		eng.startLogRecord,
 		eng.startReportStatus, // start report agent status
 		eng.startNginxConfScanner,
 		eng.loadServiceNode, // load service nodes, and init configurations
@@ -96,12 +95,6 @@ func NewEngine() *Engine {
 	eng.RegisterHooks(hooks.Stage(jupiter.StageAfterStop), eng.cleanJobs)
 
 	return eng
-}
-
-// startLogRecord start log record
-func (eng *Engine) startLogRecord() error {
-	xlog.DefaultLogger = xlog.StdConfig("default").Build()
-	return nil
 }
 
 // loadServiceNode ... TODO

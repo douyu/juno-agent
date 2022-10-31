@@ -36,13 +36,13 @@ const (
 
 // InsertNode insert the node to db
 func InsertNode(ctx context.Context, db *gorm.DB, node *Node) error {
-	return gorm.WithContext(ctx, db).Table(NodeTableName).Create(node).Error
+	return db.WithContext(ctx).Table(NodeTableName).Create(node).Error
 }
 
 // ListNodes list the node infos
 func ListNodes(ctx context.Context, db *gorm.DB) ([]Node, error) {
 	var nodes []Node
-	err := gorm.WithContext(ctx, db).Table(NodeTableName).
+	err := db.WithContext(ctx).Table(NodeTableName).
 		Where("deleteTime=?", 0).
 		Find(&nodes).Error
 	return nodes, err

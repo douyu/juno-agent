@@ -21,8 +21,8 @@ import (
 	"github.com/douyu/juno-agent/pkg/proxy/confProxy/etcd"
 	"github.com/douyu/jupiter/pkg/conf"
 	"github.com/douyu/jupiter/pkg/flag"
-	"github.com/douyu/jupiter/pkg/util/xtime"
 	"github.com/douyu/jupiter/pkg/xlog"
+	"github.com/spf13/cast"
 )
 
 // DefaultConfDir ...
@@ -77,7 +77,7 @@ func RawConfig(key string) *Config {
 func DefaultConfig() Config {
 	return Config{
 		Dir:     DefaultConfDir,
-		Timeout: xtime.Duration("1s"),
+		Timeout: cast.ToDuration("1s"),
 		Enable:  false,
 		Mysql: ConfDataSourceMysql{
 			Enable: false,

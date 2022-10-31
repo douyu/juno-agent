@@ -111,7 +111,7 @@ func (w *Worker) loadJobs(keyValue []*mvccpb.KeyValue) {
 	for _, val := range keyValue {
 		job, err := w.GetJobContentFromKv(val.Key, val.Value)
 		if err != nil {
-			w.logger.Warnf("job[%s] is invalid: %s", val.Key, err.Error())
+			w.logger.Sugar().Warnf("job[%s] is invalid: %s", val.Key, err.Error())
 			continue
 		}
 
@@ -228,7 +228,7 @@ func (w *Worker) delCmd(cmd *Cmd) {
 		delete(w.cmds, cmd.GetID())
 		w.Cron.Remove(c.schEntryID)
 	}
-	w.logger.Infof("job[%s] rule[%s] timer[%s] has deleted", cmd.Job.ID, cmd.Timer.ID, cmd.Timer.Cron)
+	w.logger.Sugar().Infof("job[%s] rule[%s] timer[%s] has deleted", cmd.Job.ID, cmd.Timer.ID, cmd.Timer.Cron)
 }
 
 func (w *Worker) modCmd(cmd *Cmd) {
@@ -250,14 +250,14 @@ func (w *Worker) modCmd(cmd *Cmd) {
 		c.schEntryID = w.Cron.Schedule(c.Timer.Schedule, c)
 	}
 
-	w.logger.Infof("job[%s]rule[%s] timer[%s] has updated", c.Job.ID, c.Timer.ID, c.Timer.Cron)
+	w.logger.Sugar().Infof("job[%s]rule[%s] timer[%s] has updated", c.Job.ID, c.Timer.ID, c.Timer.Cron)
 }
 
 func (w *Worker) addCmd(cmd *Cmd) {
 	cmd.schEntryID = w.Cron.Schedule(cmd.Timer.Schedule, cmd)
 	w.cmds[cmd.GetID()] = cmd
 
-	w.logger.Infof("job[%s] rule[%s] timer[%s] has added",
+	w.logger.Sugar().Infof("job[%s] rule[%s] timer[%s] has added",
 		cmd.Job.ID, cmd.Timer.ID, cmd.Timer.Cron)
 	return
 }
@@ -267,11 +267,11 @@ func (w *Worker) GetJobContentFromKv(key []byte, value []byte) (*Job, error) {
 	job := &Job{}
 
 	if err := json.Unmarshal(value, job); err != nil {
-		w.logger.Warnf("job[%s] unmarshal err: %s", key, err.Error())
+		w.logger.Sugar().Warnf("job[%s] unmarshal err: %s", key, err.Error())
 		return nil, err
 	}
 	if err := job.ValidRules(); err != nil {
-		w.logger.Warnf("valid rules [%s] err: %s", key, err.Error())
+		w.logger.Sugar().Warnf("valid rules [%s] err: %s", key, err.Error())
 		return nil, err
 	}
 
@@ -287,11 +287,11 @@ func (w *Worker) GetOnceJobFromKv(key []byte, value []byte) (*OnceJob, error) {
 	job := &OnceJob{}
 
 	if err := json.Unmarshal(value, job); err != nil {
-		w.logger.Warnf("job[%s] unmarshal err: %s", key, err.Error())
+		w.logger.Sugar().Warnf("job[%s] unmarshal err: %s", key, err.Error())
 		return nil, err
 	}
 	if err := job.ValidRules(); err != nil {
-		w.logger.Warnf("valid rules [%s] err: %s", key, err.Error())
+		w.logger.Sugar().Warnf("valid rules [%s] err: %s", key, err.Error())
 		return nil, err
 	}
 
@@ -301,7 +301,7 @@ func (w *Worker) GetOnceJobFromKv(key []byte, value []byte) (*OnceJob, error) {
 func (w *Worker) KillExecutingProc(process *Process) {
 	pid, _ := strconv.Atoi(process.ID)
 	if err := killProcess(pid); err != nil {
-		w.logger.Warnf("process:[%d] force kill failed, error:[%s]", pid, err)
+		w.logger.Sugar().Warnf("process:[%d] force kill failed, error:[%s]", pid, err)
 		return
 	}
 }
@@ -370,7 +370,7 @@ func (w *Worker) handleProcEv(ev clientv3.WatchResponse) {
 			key := string(event.Kv.Key)
 			process, err := GetProcFromKey(key)
 			if err != nil {
-				w.logger.Warnf("err: %s, kv: %s", err.Error(), event.Kv.String())
+				w.logger.Sugar().Warnf("err: %s, kv: %s", err.Error(), event.Kv.String())
 				continue
 			}
 
@@ -416,7 +416,7 @@ func (w *Worker) handleJobEv(event *clientv3.Event) {
 		w.logger.Info("is EventTypeDelete..")
 		w.delJob(GetIDFromKey(string(event.Kv.Key)))
 	default:
-		w.logger.Warnf("unknown event type[%v] from job[%s]", event.Type, string(event.Kv.Key))
+		w.logger.Sugar().Warnf("unknown event type[%v] from job[%s]", event.Type, string(event.Kv.Key))
 	}
 }
 

@@ -15,7 +15,7 @@ func (o *OnceJob) RunWithRecovery(taskOptions ...TaskOption) {
 			const size = 64 << 10
 			buf := make([]byte, size)
 			buf = buf[:runtime.Stack(buf, false)]
-			o.logger.Warnf("panic running job: %v\n%s", r, buf)
+			o.logger.Sugar().Warnf("panic running job: %v\n%s", r, buf)
 		}
 	}()
 	_ = o.Run(taskOptions...)

@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/douyu/juno-agent/pkg/check/view"
-	"github.com/douyu/jupiter/pkg/util/xtime"
 	"github.com/garyburd/redigo/redis"
+	"github.com/spf13/cast"
 )
 
 // RedisHealthCheck redis check config
@@ -61,9 +61,9 @@ func (h *RedisHealthCheck) DoHealthCheck() (resHealthCheck *view.ResHealthCheck,
 // DefaultRedisNodeConfig return default config
 func DefaultRedisNodeConfig() *RedisHealthCheck {
 	return &RedisHealthCheck{
-		DialTimeout:  xtime.Duration("2s"),
-		ReadTimeout:  xtime.Duration("2s"),
-		WriteTimeout: xtime.Duration("2s"),
+		DialTimeout:  cast.ToDuration("2s"),
+		ReadTimeout:  cast.ToDuration("2s"),
+		WriteTimeout: cast.ToDuration("2s"),
 		DB:           0,
 	}
 }

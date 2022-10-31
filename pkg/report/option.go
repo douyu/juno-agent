@@ -16,12 +16,13 @@ package report
 
 import (
 	"fmt"
-	"github.com/douyu/jupiter/pkg/conf"
-	"github.com/douyu/jupiter/pkg/flag"
-	"github.com/douyu/jupiter/pkg/util/xtime"
-	"github.com/douyu/jupiter/pkg/xlog"
 	"os"
 	"time"
+
+	"github.com/douyu/jupiter/pkg/conf"
+	"github.com/douyu/jupiter/pkg/flag"
+	"github.com/douyu/jupiter/pkg/xlog"
+	"github.com/spf13/cast"
 )
 
 // Config report config
@@ -54,7 +55,7 @@ func StdConfig(key string) *Config {
 func DefaultConfig() Config {
 	return Config{
 		Enable:   false,
-		Internal: xtime.Duration("60s"),
+		Internal: cast.ToDuration("60s"),
 	}
 }
 

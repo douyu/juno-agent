@@ -20,11 +20,13 @@ import (
 
 // Migrate migrate mysql db
 func Migrate(db *gorm.DB) {
-	if !db.HasTable(&Node{}) {
-		db.CreateTable(&Node{})
+
+	migrate := db.Migrator()
+	if !migrate.HasTable(&Node{}) {
+		migrate.CreateTable(&Node{})
 	}
 
-	if !db.HasTable(&CheckResult{}) {
-		db.CreateTable(&CheckResult{})
+	if !migrate.HasTable(&CheckResult{}) {
+		migrate.CreateTable(&CheckResult{})
 	}
 }
