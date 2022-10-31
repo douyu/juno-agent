@@ -107,7 +107,7 @@ func (p *Process) Start(job *Job) {
 	}
 
 	if err := p.put(job); err != nil {
-		job.logger.Warnf("proc put[%s] err: %s", p.Key(), err.Error())
+		job.logger.Sugar().Warnf("proc put[%s] err: %s", p.Key(), err.Error())
 	}
 	return
 }
@@ -135,6 +135,6 @@ func (p *Process) Stop(job *Job) {
 	}
 
 	if err := p.del(job); err != nil {
-		job.logger.Warnf("proc del[%s] err: %s", p.Key(), err.Error())
+		job.logger.Sugar().Warnf("proc del[%s] err: %s", p.Key(), err.Error())
 	}
 }

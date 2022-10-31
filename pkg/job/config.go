@@ -53,7 +53,6 @@ func StdConfig(key string) *Config {
 		panic(err)
 	}
 
-	config.logger = xlog.StdConfig("cronjob").Build()
 	return config
 }
 
@@ -66,7 +65,7 @@ func (c *Config) Build() *Worker {
 	c.AppIP = report.ReturnAppIp()
 
 	if c.logger == nil {
-		c.logger = xlog.JupiterLogger
+		c.logger = xlog.Jupiter()
 	}
 	c.logger = c.logger.With(xlog.FieldMod("worker"))
 
