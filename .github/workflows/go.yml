@@ -47,15 +47,16 @@ jobs:
 
       - name: Build
         run: go build -v ./cmd/juno-agent
-      - name: Test
-        run: |
-          go test -race -coverprofile=coverage.txt -covermode=atomic ./...
 
-      - name: Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          token: ${{secrets.CODECOV_TOKEN}}
-          fail_ci_if_error: true
-          files: ./coverage.txt
-          name: jupiter
-          verbose: true
+      # - name: Test
+      #   run: |
+      #     go test -race -coverprofile=coverage.txt -covermode=atomic ./...
+
+      # - name: Codecov
+      #   uses: codecov/codecov-action@v3
+      #   with:
+      #     token: ${{secrets.CODECOV_TOKEN}}
+      #     fail_ci_if_error: true
+      #     files: ./coverage.txt
+      #     name: jupiter
+      #     verbose: true
