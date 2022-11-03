@@ -8,7 +8,7 @@ require (
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/douyu/jupiter v0.9.4
 	github.com/fsnotify/fsnotify v1.6.0
-	github.com/garyburd/redigo v1.6.0
+	github.com/garyburd/redigo v1.6.4
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/jinzhu/gorm v1.9.16
 	github.com/json-iterator/go v1.1.12
