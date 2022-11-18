@@ -6,7 +6,7 @@ require (
 	github.com/apache/rocketmq-client-go/v2 v2.1.1
 	github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e
 	github.com/cenkalti/backoff v2.2.1+incompatible
-	github.com/douyu/jupiter v0.9.6
+	github.com/douyu/jupiter v0.9.7
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/garyburd/redigo v1.6.4
 	github.com/go-resty/resty/v2 v2.7.0
