@@ -6,7 +6,7 @@ require (
 	github.com/apache/rocketmq-client-go/v2 v2.1.1
 	github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e
 	github.com/cenkalti/backoff v2.2.1+incompatible
-	github.com/douyu/jupiter v0.9.6
+	github.com/douyu/jupiter v0.9.9
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/garyburd/redigo v1.6.4
 	github.com/go-resty/resty/v2 v2.7.0
@@ -22,8 +22,8 @@ require (
 	github.com/stretchr/testify v1.8.1
 	github.com/uber-go/atomic v1.4.0
 	github.com/yangchenxing/go-nginx-conf-parser v0.0.0-20190110023421-0d59f1b7a3f6
-	go.etcd.io/etcd/api/v3 v3.5.5
-	go.etcd.io/etcd/client/v3 v3.5.5
+	go.etcd.io/etcd/api/v3 v3.5.6
+	go.etcd.io/etcd/client/v3 v3.5.6
 	go.etcd.io/etcd/server/v3 v3.5.5
 	go.uber.org/zap v1.23.0
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
