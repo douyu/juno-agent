@@ -32,7 +32,7 @@ import (
 
 func (eng *Engine) serveHTTP() error {
 
-	s, _ := xecho.StdConfig("http").Build()
+	s := xecho.StdConfig("http").MustBuild()
 
 	group := s.Group("/api")
 	group.GET("/config/:target", eng.getAppConfigContent)
