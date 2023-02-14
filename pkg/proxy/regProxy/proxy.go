@@ -28,7 +28,6 @@ import (
 	"github.com/douyu/juno-agent/pkg/structs"
 	"github.com/douyu/jupiter/pkg/client/etcdv3"
 	"github.com/douyu/jupiter/pkg/util/xdebug"
-	"github.com/douyu/jupiter/pkg/util/xstring"
 	"github.com/douyu/jupiter/pkg/xlog"
 	pb "go.etcd.io/etcd/api/v3/etcdserverpb"
 	"go.etcd.io/etcd/server/v3/proxy/grpcproxy"
@@ -138,9 +137,9 @@ func extractRegInfoV1(key, val []byte) (node *structs.ServiceNode, err error) {
 	// grpc service with 'grpc:' prefix
 	// http service with 'http:' prefix
 	// {schema}:{app_name}:v1:{env}/{ip}:{port}
-	prefix, suffix := xstring.Split(string(key), "/").Head2()
-	schema, appName, _, env := xstring.Split(prefix, ":").Head4()
-	ip, portStr := xstring.Split(suffix, ":").Head2()
+	prefix, suffix := Split(string(key), "/").Head2()
+	schema, appName, _, env := Split(prefix, ":").Head4()
+	ip, portStr := Split(suffix, ":").Head2()
 
 	port, _ := strconv.Atoi(portStr)
 	return &structs.ServiceNode{
@@ -154,7 +153,7 @@ func extractRegInfoV1(key, val []byte) (node *structs.ServiceNode, err error) {
 
 // extractRegInfoV2 ...
 func extractRegInfoV2(key []byte, val []byte) (node *structs.ServiceNode, err error) {
-	appName, addr := xstring.Split(strings.TrimLeft(string(key), "/reg/"), "/providers/").Head2()
+	appName, addr := Split(strings.TrimLeft(string(key), "/reg/"), "/providers/").Head2()
 	xlog.Info("extractRegInfoV2", xlog.String("appName", appName), xlog.String("addr", addr))
 	uri, err := url.Parse(addr)
 	if err != nil {
@@ -175,7 +174,7 @@ func extractRegInfoV2(key []byte, val []byte) (node *structs.ServiceNode, err er
 		RegInfo: regInfo,
 	}
 	if strings.Contains(uri.Host, ":") {
-		node.IP, node.Port = xstring.Split(uri.Host, ":").Head2()
+		node.IP, node.Port = Split(uri.Host, ":").Head2()
 	}
 
 	return
@@ -183,7 +182,7 @@ func extractRegInfoV2(key []byte, val []byte) (node *structs.ServiceNode, err er
 
 // extractRegInfoV3 ...
 func extractRegInfoV3(key, val []byte) (node *structs.ServiceNode, err error) {
-	// _, srvName, _, addr := xstring.Split(string(key), "/").Head4()
+	// _, srvName, _, addr := Split(string(key), "/").Head4()
 	// uri, err := url.Parse(addr)
 	// if err != nil {
 	// 	panic(err)
