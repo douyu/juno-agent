@@ -1,4 +1,4 @@
-name: goreleaser
+name: latest
 
 on:
   push:
@@ -39,11 +39,6 @@ jobs:
           args: release --clean --snapshot
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Set outputs
-        id: vars
-        run: |
-          echo "::set-output name=file_name::$(ls dist/juno_*linux* |cut -c 6-)"
-
       - name: Log in to the Container registry
         uses: docker/login-action@v2.1.0
         with:
@@ -65,5 +60,5 @@ jobs:
           image: ${{ env.IMAGE_NAME }}
           addLatest: false
           dockerfile: Dockerfile
-          username: ${{ secrets.GHCR_USERNAME }}
-          password: ${{ secrets.GHCR_TOKEN }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
