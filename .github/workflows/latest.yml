@@ -58,7 +58,7 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           image: ${{ env.IMAGE_NAME }}
-          addLatest: false
+          addLatest: true
           dockerfile: Dockerfile
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
