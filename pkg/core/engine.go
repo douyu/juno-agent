@@ -321,8 +321,8 @@ func (eng *Engine) upsertRegClient(node *structs.ServiceNode) {
 	eng.clients = append(eng.clients, client)
 }
 
-//If the confNode already exists in the client managed by Engine, update the AppConfiguration in time;
-//otherwise, add the confNode to the client managed by Engine
+// If the confNode already exists in the client managed by Engine, update the AppConfiguration in time;
+// otherwise, add the confNode to the client managed by Engine
 func (eng *Engine) upsertConfClient(node *structs.ConfNode) {
 	for _, c := range eng.clients {
 		if c.AppName == node.AppName &&

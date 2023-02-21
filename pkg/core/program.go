@@ -20,7 +20,7 @@ import (
 	"github.com/douyu/jupiter/pkg/xlog"
 )
 
-//updateProgram update process information to local cache
+// updateProgram update process information to local cache
 func (eng *Engine) updateProgram(program *structs.ProgramExt) {
 	switch program.Status {
 	case "create":

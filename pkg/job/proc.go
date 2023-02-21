@@ -55,7 +55,7 @@ func GetProcFromKey(key string) (proc *Process, err error) {
 	return
 }
 
-//key: /{etcd_prefix}/jobId/taskId/node/pid
+// key: /{etcd_prefix}/jobId/taskId/node/pid
 func (p *Process) Key() string {
 	taskId := strconv.FormatUint(p.TaskID, 10)
 	return ProcKeyPrefix + p.JobID + "/" + taskId + "/" + p.NodeID + "/" + p.ID
