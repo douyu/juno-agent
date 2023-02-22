@@ -24,7 +24,7 @@ import (
 	"github.com/douyu/jupiter/pkg/conf"
 )
 
-//EncryptAPIResp 加密API响应内容
+// EncryptAPIResp 加密API响应内容
 func EncryptAPIResp(plainText string) string {
 	cipherText, _ := AESCBCEncrypt(plainText, conf.GetString("api.secret"))
 	return cipherText
@@ -65,15 +65,15 @@ func AESCBCDecrypt(cryted string, key string) (string, error) {
 	return string(orig), nil
 }
 
-//补码, len = 128||192||256
-//AES加密数据块分组长度必须为128bit(byte[16])，密钥长度可以是128bit(byte[16])、192bit(byte[24])、256bit(byte[32])中的任意一个。
+// 补码, len = 128||192||256
+// AES加密数据块分组长度必须为128bit(byte[16])，密钥长度可以是128bit(byte[16])、192bit(byte[24])、256bit(byte[32])中的任意一个。
 func PKCS7Padding(ciphertext []byte, blocksize int) []byte {
 	padding := blocksize - len(ciphertext)%blocksize
 	padtext := bytes.Repeat([]byte{byte(padding)}, padding)
 	return append(ciphertext, padtext...)
 }
 
-//去码
+// 去码
 func PKCS7UnPadding(origData []byte) []byte {
 	length := len(origData)
 	unpadding := int(origData[length-1])

@@ -10,6 +10,7 @@
             zones = ["HB-WHYL"]                       # 用于支持zone过滤
             enableCleanup = false
             timeInterval = 10
+            prefixs=["govern:", "/govern/"]
 
 [plugin.confProxy]
     # 配置中心地址

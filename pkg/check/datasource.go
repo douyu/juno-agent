@@ -38,7 +38,7 @@ func invoke(f interface{}, params ...interface{}) []reflect.Value {
 	return rs
 }
 
-//Get  return HealthCheck instance
+// Get  return HealthCheck instance
 func Get(reflect []reflect.Value) (DataSource, error) {
 	if len(reflect) > 0 {
 		return reflect[0].Interface().(DataSource), nil

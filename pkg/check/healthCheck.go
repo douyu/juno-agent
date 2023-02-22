@@ -35,7 +35,7 @@ type HealthCheck struct {
 	resHealthCheckChan chan *view.ResHealthCheck
 }
 
-//HealthCheck detection of service dependency
+// HealthCheck detection of service dependency
 func (h *HealthCheck) HealthCheck(req model.CheckReq) (checkResults []*view.ResHealthCheck) {
 	checkResults = make([]*view.ResHealthCheck, 0)
 	for _, info := range req.CheckDatas {

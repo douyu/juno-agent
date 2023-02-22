@@ -30,7 +30,7 @@ type Scanner struct {
 	stop          chan struct{}
 }
 
-//Start after a delay of the specified time,
+// Start after a delay of the specified time,
 // the loop scan is started for status information and the data is written to the channel of the processScanner
 func (ps *Scanner) Start() error {
 	xgo.DelayGo(time.Second*10, ps.monitor)

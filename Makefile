@@ -7,6 +7,11 @@ APP_NAME:=$(shell basename $(BASE_PATH))
 COMPILE_OUT:=$(BASE_PATH)/release
 APP_VERSION:=0.1.0
 
+GO_FILES := $(shell find . -name '*.go' | grep -v /vendor/ | grep -v /test | grep -v .pb.go | grep -v .generated.go | grep -v _test.go)
+FAIL_ON_STDOUT := awk '{ print } END { if (NR > 0) { exit 1 } }'
+
+gofmt: 
+	@gofmt -s -w $(GO_FILES) 2>&1 | $(FAIL_ON_STDOUT)
 
 all:print fmt buildAgent
 
