@@ -23,6 +23,7 @@ import (
 	"github.com/douyu/juno-agent/pkg/pmt"
 	"github.com/douyu/juno-agent/pkg/structs"
 	"github.com/douyu/juno-agent/util"
+	"github.com/douyu/jupiter/pkg/conf"
 	"github.com/douyu/jupiter/pkg/server/xecho"
 	"github.com/douyu/jupiter/pkg/server/xgrpc"
 	"github.com/labstack/echo/v4"
@@ -180,7 +181,7 @@ func (eng *Engine) getAppConfigContent(ctx echo.Context) error {
 		return ctx.JSON(400, nil)
 	}
 
-	appKey := fmt.Sprintf("/minerva-agent/%s/%s/%s/static/%s", "cluster", name, envi, target)
+	appKey := conf.GetString("plugin.confProxy.prefix") + fmt.Sprintf("/%s/%s/%s/static/%s", "cluster", name, envi, target)
 	res, err := eng.confProxy.GetRawValues(ctx, appKey)
 	if err != nil {
 		return reply400(ctx, err.Error())
