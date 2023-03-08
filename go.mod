@@ -14,7 +14,7 @@ require (
 	github.com/json-iterator/go v1.1.12
 	github.com/labstack/echo/v4 v4.10.2
 	github.com/labstack/gommon v0.4.0
-	github.com/nats-io/nats.go v1.20.0
+	github.com/nats-io/nats.go v1.24.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sony/sonyflake v1.1.0
 	github.com/spf13/cast v1.5.0
