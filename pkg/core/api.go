@@ -56,7 +56,7 @@ func (eng *Engine) serveHTTP() error {
 
 func (eng *Engine) serveGRPC() error {
 	config := xgrpc.StdConfig("grpc")
-	server, _ := config.Build()
+	server := config.MustBuild()
 	pb.RegisterKVServer(server.Server, eng.regProxy)
 	pb.RegisterWatchServer(server.Server, eng.regProxy)
 	pb.RegisterLeaseServer(server.Server, eng.regProxy)
