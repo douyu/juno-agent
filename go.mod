@@ -21,7 +21,7 @@ require (
 	github.com/stretchr/testify v1.8.2
 	github.com/uber-go/atomic v1.4.0
 	github.com/yangchenxing/go-nginx-conf-parser v0.0.0-20190110023421-0d59f1b7a3f6
-	go.etcd.io/etcd/api/v3 v3.5.7
+	go.etcd.io/etcd/api/v3 v3.5.8
 	go.etcd.io/etcd/client/v3 v3.5.7
 	go.etcd.io/etcd/server/v3 v3.5.6
 	go.uber.org/zap v1.24.0
