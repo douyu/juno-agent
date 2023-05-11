@@ -21,8 +21,8 @@ require (
 	github.com/stretchr/testify v1.8.2
 	github.com/uber-go/atomic v1.4.0
 	github.com/yangchenxing/go-nginx-conf-parser v0.0.0-20190110023421-0d59f1b7a3f6
-	go.etcd.io/etcd/api/v3 v3.5.7
-	go.etcd.io/etcd/client/v3 v3.5.7
+	go.etcd.io/etcd/api/v3 v3.5.9
+	go.etcd.io/etcd/client/v3 v3.5.9
 	go.etcd.io/etcd/server/v3 v3.5.6
 	go.uber.org/zap v1.24.0
 	golang.org/x/sync v0.1.0
@@ -92,7 +92,7 @@ require (
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2 // indirect
 	go.etcd.io/bbolt v1.3.6 // indirect
-	go.etcd.io/etcd/client/pkg/v3 v3.5.7 // indirect
+	go.etcd.io/etcd/client/pkg/v3 v3.5.9 // indirect
 	go.etcd.io/etcd/client/v2 v2.305.6 // indirect
 	go.etcd.io/etcd/pkg/v3 v3.5.6 // indirect
 	go.etcd.io/etcd/raft/v3 v3.5.6 // indirect
