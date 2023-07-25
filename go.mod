@@ -17,7 +17,7 @@ require (
 	github.com/nats-io/nats.go v1.20.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sony/sonyflake v1.1.0
-	github.com/spf13/cast v1.5.0
+	github.com/spf13/cast v1.5.1
 	github.com/stretchr/testify v1.8.2
 	github.com/uber-go/atomic v1.4.0
 	github.com/yangchenxing/go-nginx-conf-parser v0.0.0-20190110023421-0d59f1b7a3f6
