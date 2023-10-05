@@ -25,7 +25,7 @@ require (
 	go.etcd.io/etcd/client/v3 v3.5.9
 	go.etcd.io/etcd/server/v3 v3.5.6
 	go.uber.org/zap v1.24.0
-	golang.org/x/sync v0.2.0
+	golang.org/x/sync v0.4.0
 	google.golang.org/grpc/examples v0.0.0-20220510235641-db79903af928
 	gopkg.in/ini.v1 v1.67.0
 )
